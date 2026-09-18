@@ -1,0 +1,39 @@
+%======================================================================
+\chapter{Literature Survey}
+%======================================================================
+
+\section{Introduction}
+Legal metrology enforces statutory standards on commercial weighing and measuring equipment to ensure trade fairness and consumer protection under the Legal Metrology Act, 2009. While traditional enforcement relies on physical lead seals and paper certificates, global standards bodies and national agencies are transitioning toward digital certification systems.
+
+\section{Review of Key Initiatives}
+\begin{enumerate}
+    \item \textbf{OIML Digital Metrology (2025):} Highlights national initiatives (such as Austria's BEV MMEII portal) that utilize QR-enabled certificates to enable real-time consumer verification of measuring instruments.
+    \item \textbf{PTB Digital Calibration Architecture (2024):} Germany's national metrology institute established modular, REST-based frameworks for exchanging structured Digital Calibration Certificates (DCC).
+    \item \textbf{India's `e-Maap' Portal (2026):} Launched by the Department of Consumer Affairs to centralize verification and licensing, demonstrating government commitment to digital metrology.
+    \item \textbf{Anti-Counterfeit QR Frameworks (2024):} Recent research proves that embedding cryptographic SHA-256 digests and server-bound QR verification endpoints effectively eliminates electronic certificate forgery.
+\end{enumerate}
+
+\section{Comparative Evaluation}
+Table~\ref{tab:literature_comparison} highlights key distinctions between legacy methods, first-generation portals, and METRIX.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Comparison of Verification Approaches}
+\label{tab:literature_comparison}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{|l|p{3.5cm}|p{3.8cm}|p{4.2cm}|}
+\hline
+\textbf{Feature} & \textbf{Legacy Paper Stamping} & \textbf{First-Gen Portals (e-Maap)} & \textbf{METRIX Platform} \\ \hline
+Application & Physical paper forms & Centralized web forms & Guided digital wizard \\ \hline
+Inspection & Handwritten sheets & Offline data transcription & Direct digital checklist \\ \hline
+Certificate & Physical paper certificate & Static downloadable PDF & Tamper-evident PDF with dynamic QR \\ \hline
+Verification & Visual stamp check & Portal search by number & Instant zero-login QR scan \\ \hline
+Expiry & Untracked manual ledgers & Generic bulk reminders & Automated lifecycle notifications \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Research Gap and Solution Motivation}
+Existing systems either focus solely on industrial laboratory calibrations or operate as heavy centralized monoliths without lightweight, state-level modular architectures. Furthermore, they lack direct point-of-sale public QR authentication and automated re-verification cycles. 
+
+METRIX resolves these gaps through five integrated pillars: (i) centralized instrument registry, (ii) role-based workflow for officers and test centres, (iii) digital MPE observation logging, (iv) QR-enabled tamper-evident certification, and (v) frictionless public authentication with proactive expiry tracking.

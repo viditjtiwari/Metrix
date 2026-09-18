@@ -1,0 +1,32 @@
+%======================================================================
+\chapter{Introduction}
+%======================================================================
+
+\section{Project Overview}
+\textbf{METRIX} is a secure, web-based Online Verification and Digital Certification System developed for Smart India Hackathon (SIH 2026) Problem Statement \textbf{SIH26036} under the Department of Consumer Affairs, Government of India. Under the Legal Metrology Act, 2009, all commercial weighing and measuring instruments must undergo periodic verification by authorized Legal Metrology Officers (LMOs) or Government Approved Test Centres (GATCs). 
+
+METRIX digitizes this end-to-end statutory lifecycle—enabling online instrument registration, digital application submission, field inspection logging against Maximum Permissible Error (MPE) thresholds, tamper-evident digital certificate generation with verifiable QR codes, and automated expiry monitoring.
+
+\section{Problem Statement and Motivation}
+Traditional legal metrology verification relies heavily on physical paper ledgers, manual challans, and brass stamping. This causes severe administrative delays, siloed records across districts, certificate counterfeiting, and an absence of consumer-facing verification at the point of sale. METRIX replaces these fragmented manual steps with a unified, transparent digital platform.
+
+\section{Project Objectives}
+The primary objectives of the project are:
+\begin{enumerate}
+    \item \textbf{Online Registration \& Application:} Enable commercial businesses to register instruments and apply for initial and periodic verification online.
+    \item \textbf{Inspection Scheduling \& Allocation:} Provide dynamic workload distribution for LMOs and accredited GATCs.
+    \item \textbf{Digital Inspection Logging:} Implement standardized digital checklists to record load tests, repeatability, and MPE compliance.
+    \item \textbf{Tamper-Evident Certification:} Generate verifiable PDF certificates embedded with dynamic QR codes and SHA-256 integrity hashes.
+    \item \textbf{Public Verification Portal:} Provide a zero-login interface for citizens and enforcement officers to verify instrument calibration via QR scan.
+    \item \textbf{Compliance \& Expiry Monitoring:} Automatically compute certificate validity and alert custodians prior to statutory expiry.
+\end{enumerate}
+
+\section{Scope and Technical Stack}
+METRIX is built as a lightweight, modular web application:
+\begin{itemize}
+    \item \textbf{Frontend:} React.js, Next.js (App Router), TypeScript, Tailwind CSS.
+    \item \textbf{Backend:} FastAPI (Python 3.10+), Pydantic v2, SQLAlchemy 2.x.
+    \item \textbf{Database:} PostgreSQL relational database.
+    \item \textbf{Certificates \& QR:} ReportLab PDF engine and Python \texttt{qrcode}.
+\end{itemize}
+In accordance with project constraints, the application is developed as a software-only modular monolith without external brokers (Kafka/RabbitMQ), Docker/Kubernetes, or AI/ML components.

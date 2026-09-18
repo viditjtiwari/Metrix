@@ -1,0 +1,107 @@
+\documentclass[12pt,a4paper]{report}
+
+% Essential Packages
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{microtype}
+\usepackage[hyphens]{url}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, calc}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+
+% Line Spacing & Formatting
+\onehalfspacing
+\setlength{\parskip}{0.8em}
+\setlength{\parindent}{0pt}
+
+% Chapter and Heading Spacing (Removes excessive top whitespace on Contents and Chapters)
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{10pt}{\huge}
+\titlespacing*{\chapter}{0pt}{-30pt}{20pt}
+
+% Header and Footer Setup
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small \nouppercase{\leftmark}}
+\fancyhead[R]{\small METRIX -- SIH26036}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\begin{document}
+
+%======================================================================
+% TITLE PAGE
+%======================================================================
+\begin{titlepage}
+    \centering
+    \vspace*{0.5cm}
+    
+    {\Huge \textbf{METRIX}}\\[0.4cm]
+    {\large \textbf{Online Verification and Digital Certification System\\for Weighing and Measuring Instruments}}\\[0.8cm]
+    
+    {\large \textit{A Project-I Report Submitted in Partial Fulfilment for the Award of the Degree of}}\\[0.3cm]
+    {\Large \textbf{Bachelor of Technology}}\\[0.2cm]
+    {\large (VII Semester, Session 2026--27)}\\[0.6cm]
+    
+    \textbf{Problem Statement ID: SIH26036}\\
+    \textit{Smart India Hackathon (SIH 2026)}\\[1.2cm]
+    
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushleft} \large
+            \textbf{Supervised By:}\\
+            \textbf{Prof. Mamta Garg}\\
+            Dean, Department of CSE\\
+            JIET, Jodhpur
+        \end{flushleft}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushright} \large
+            \textbf{Submitted By:}\\
+            Vidit J Tiwari (23EJICS178)\\
+            Tamanna Parveen (23EJICS169)\\
+            Vishnu Kant (23EJICS182)\\[0.2cm]
+            \small Section: C \textbar{} Group: 7C2
+        \end{flushright}
+    \end{minipage}
+    
+    \vfill
+    
+    \includegraphics[width=0.22\textwidth]{example-image} \\[0.4cm]
+    
+    {\large \textbf{Department of Computer Science and Engineering}}\\
+    {\large \textbf{Jodhpur Institute of Engineering and Technology (Autonomous)}}\\
+    {\normalsize Affiliated with Bikaner Technical University}\\
+    {\normalsize Jodhpur, Rajasthan, India}\\
+    {\normalsize Academic Year 2026--27}
+\end{titlepage}
+
+%======================================================================
+% TABLE OF CONTENTS
+%======================================================================
+\newpage
+\pagenumbering{roman}
+\tableofcontents
+
+%======================================================================
+% CHAPTER INCLUSIONS
+%======================================================================
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{Chapter-1}
+\input{Chapter-2}
+\input{Chapter-3}
+\input{Chapter-5}
+
+\end{document}

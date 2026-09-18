@@ -1,0 +1,469 @@
+\documentclass[11pt,a4paper]{article}
+
+% Typography and Layout
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{setspace}
+\onehalfspacing
+
+% Colors and Graphic Elements
+\usepackage[table,dvipsnames]{xcolor}
+\definecolor{primarynavy}{RGB}{30, 58, 138}    % #1E3A8A (Deep Navy)
+\definecolor{accentblue}{RGB}{37, 99, 235}     % #2563EB (Royal Blue)
+\definecolor{darkslate}{RGB}{30, 41, 59}       % #1E293B (Body Text)
+\definecolor{lightslate}{RGB}{248, 250, 252}   % #F8FAFC (Card Background)
+\definecolor{bordergray}{RGB}{226, 232, 240}   % #E2E8F0 (Subtle Borders)
+\definecolor{tablehead}{RGB}{30, 58, 138}     % Table Header Fill
+\definecolor{tablerow}{RGB}{241, 245, 249}     % Table Alternate Row
+
+% Fancy Box Packages
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+% Tables and Formatting
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{lastpage}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage[colorlinks=true,linkcolor=accentblue,citecolor=accentblue,urlcolor=accentblue]{hyperref}
+
+% Currency Command
+\newcommand{\INR}{\textbf{Rs.~}}
+
+% Bullet and Numbering Customization
+\setlist[itemize]{leftmargin=1.5em, itemsep=2pt, topsep=2pt, label={\color{accentblue}$\blacktriangleright$}}
+\setlist[enumerate]{leftmargin=1.5em, itemsep=2pt, topsep=2pt, label={\color{primarynavy}\bfseries\arabic*.}}
+
+% Header and Footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{primarynavy}\textbf{METRIX -- SIH26036 \textbar{} Project Proposal}}
+\fancyhead[R]{\small\color{gray}VII Semester B.Tech (Session 2026--27)}
+\fancyfoot[L]{\small\color{gray}Department of Computer Science \& Engineering, JIET Jodhpur}
+\fancyfoot[R]{\small\color{gray}Page \thepage\ of \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.6pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{primarynavy}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% Section Styling with Accent Bars
+\titleformat{\section}
+  {\color{primarynavy}\Large\bfseries}
+  {\thesection}{0.6em}{}
+  [{\color{accentblue}\titlerule[1.2pt]}]
+
+\titleformat{\subsection}
+  {\color{primarynavy}\large\bfseries}
+  {\thesubsection}{0.5em}{}
+
+\begin{document}
+
+%======================================================================
+% INSTITUTIONAL HEADER BANNER
+%======================================================================
+\begin{tcolorbox}[
+    enhanced,
+    colback=lightslate,
+    colframe=primarynavy,
+    arc=3mm,
+    boxrule=1.5pt,
+    center,
+    width=\textwidth,
+    top=12pt,
+    bottom=12pt
+]
+    \centering
+    {\LARGE \textbf{\color{primarynavy}JODHPUR INSTITUTE OF ENGINEERING AND TECHNOLOGY}}\\[0.2cm]
+    {\large \textbf{\color{darkslate}(An Autonomous Institution Affiliated with Bikaner Technical University)}}\\[0.15cm]
+    {\normalsize \textbf{\color{accentblue}DEPARTMENT OF COMPUTER SCIENCE \& ENGINEERING}}\\[0.35cm]
+    {\Large \textbf{\color{primarynavy}MAJOR PROJECT PROPOSAL}}\\[0.1cm]
+    {\normalsize \textbf{B.Tech VII Semester \textbar{} Academic Session 2026--27}}
+\end{tcolorbox}
+
+\vspace{0.2cm}
+
+%======================================================================
+% PROJECT METADATA CARD
+%======================================================================
+\begin{tcolorbox}[
+    enhanced,
+    colback=white,
+    colframe=bordergray,
+    boxrule=1pt,
+    arc=2mm,
+    top=8pt,
+    bottom=8pt
+]
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{@{}p{3.8cm}X@{}}
+    \textbf{\color{primarynavy}Project Title:} & \textbf{\large METRIX -- Online Verification and Digital Certification System for Weighing and Measuring Instruments} \\
+    \textbf{\color{primarynavy}SIH Problem ID:} & \textbf{SIH26036} (\textit{Development of an Online Verification System for Weighing and Measuring Instruments}) \\
+    \textbf{\color{primarynavy}Sponsoring Ministry:} & Ministry of Consumer Affairs, Food \& Public Distribution (Department of Consumer Affairs) \\
+    \textbf{\color{primarynavy}Supervisor / Guide:} & \textbf{Prof. Mamta Garg}, Dean, Department of Computer Science \& Engineering, JIET \\
+    \textbf{\color{primarynavy}Submitted By:} & \textbf{Vidit J Tiwari} (23EJICS178) \textbar{} \textbf{Tamanna Parveen} (23EJICS169) \textbar{} \textbf{Vishnu Kant} (23EJICS182) \\
+    \textbf{\color{primarynavy}Class \& Group:} & Section: C \textbar{} Group: 7C2 \\
+\end{tabularx}
+\end{tcolorbox}
+
+\vspace{0.1cm}
+
+%======================================================================
+% EXECUTIVE PROJECT SUMMARY
+%======================================================================
+\begin{tcolorbox}[
+    enhanced,
+    colback=lightslate,
+    colframe=primarynavy,
+    leftrule=4mm,
+    rightrule=0.6pt,
+    toprule=0.6pt,
+    bottomrule=0.6pt,
+    arc=1.5mm,
+    title={\textbf{\color{white}\large Executive Project Summary}},
+    coltitle=white,
+    colbacktitle=primarynavy
+]
+The proposed project, \textbf{METRIX}, is an enterprise-grade web-based Online Verification and Digital Certification System designed to digitize the statutory regulatory lifecycle of commercial weighing and measuring instruments under the Legal Metrology Act, 2009. The system automates instrument registration, application submission, dynamic scheduling, standardized field inspection observation recording, tamper-evident digital certificate issuance, and compliance tracking. 
+
+Stakeholders can register instruments and submit verification applications online, while authorized Legal Metrology Officers (LMOs) and Government Approved Test Centres (GATCs) can schedule inspections, validate measurements against Maximum Permissible Error (MPE) thresholds, and issue cryptographically secured digital certificates embedded with verifiable Quick Response (QR) codes. Consumers and enforcement authorities can independently authenticate certificates in real time via a public verification portal. The platform incorporates role-based access control (RBAC), automated expiry notifications, and compliance analytics, providing a unified regulatory solution.
+\end{tcolorbox}
+
+\vspace{0.2cm}
+
+%======================================================================
+% 1. ORIGIN OF THE PROPOSAL (MOTIVATION)
+%======================================================================
+\section{Origin of the Proposal (Motivation)}
+The verification of weighing and measuring instruments is legally mandated to protect consumer rights and guarantee trade equity. In the current operational landscape, verification involves multi-party coordination across instrument owners, field officers, and testing laboratories. However, existing workflows rely overwhelmingly on physical ledgers, manual challan handling, paper certificates, and physical brass/lead stamping. 
+
+The \textbf{SIH26036} problem statement identifies the imperative to eliminate paper-based bottlenecks and establish an authoritative, centralized digital record. The core motivators include:
+\begin{itemize}
+    \item \textbf{Eliminating Paperwork:} Transitioning from manual challans and physical registers to automated web filings.
+    \item \textbf{Centralizing Metrology Records:} Establishing a single source of truth for instrument lifecycles across jurisdictions.
+    \item \textbf{Real-Time Application Tracking:} Providing live status tracking from submission to certificate issuance.
+    \item \textbf{Optimized Scheduling:} Dynamic allocation of field inspections to LMOs and specialized GATC laboratories.
+    \item \textbf{Standardized Metrological Records:} Capturing digital observations (load repeatability, eccentricity, error calculations) on-site.
+    \item \textbf{Anti-Counterfeit Certificates:} Generating cryptographically signed PDF certificates with dynamic QR verification.
+    \item \textbf{Proactive Expiry Enforcement:} Automated tracking of validity intervals and scheduled re-verification notifications.
+\end{itemize}
+
+%======================================================================
+% 2. DEFINITION OF THE PROBLEM
+%======================================================================
+\section{Definition of the Problem}
+Verification and re-verification of commercial measuring instruments encompass a distributed sequence of statutory checks executed by heterogeneous actors. Manual or fragmented record-keeping makes it arduous to monitor application queues, allocate inspection duties, preserve complete instrument histories, prevent certificate forgery, and enforce timely re-verification.
+
+\textbf{The METRIX Solution:} Developing a unified, accessible, and secure web-based verification and digital certification platform that coordinates the complete instrument lifecycle—from registration and application submission to scheduling, on-site testing, digital certificate generation, and automated re-verification tracking. The platform provides isolated, role-tailored workspaces for Commercial Establishments, Legal Metrology Officers (LMOs), Government Approved Test Centres (GATCs), and System Administrators.
+
+\newpage
+
+%======================================================================
+% 3. OBJECTIVES
+%======================================================================
+\section{Project Objectives}
+The project delivers fourteen targeted objectives to establish an automated legal metrology framework:
+\begin{enumerate}
+    \item \textbf{Secure Web Platform:} Engineer a responsive, role-partitioned web application with robust authentication.
+    \item \textbf{Stakeholder Profile Management:} Provide self-service digital onboarding for commercial businesses and repairers.
+    \item \textbf{Centralized Instrument Registry:} Catalog instruments with specifications, serial numbers, accuracy classes, and capacities.
+    \item \textbf{Online Application Lifecycle:} Support digital submission for initial verification and periodic re-verification with fee challans.
+    \item \textbf{Transparent Status Tracking:} Provide multi-state tracking (\textit{Draft, Submitted, Under Review, Scheduled, Verified, Certified}).
+    \item \textbf{Intelligent Scheduling \& Allocation:} Allocate inspection workloads to designated LMOs and accredited GATCs.
+    \item \textbf{Digital Metrological Logging:} Standardize on-site checklists for tare error, repeatability, and MPE tolerance limits.
+    \item \textbf{Tamper-Evident Certification:} Generate official PDF verification certificates using server-rendered vector layouts.
+    \item \textbf{QR-Based Anti-Counterfeiting:} Embed cryptographic SHA-256 hashes and verification URLs into high-density QR codes.
+    \item \textbf{Zero-Login Public Verification:} Enable citizens and enforcement squads to verify instrument calibration by scanning QR codes.
+    \item \textbf{Complete Regulatory Audit Trails:} Maintain immutable transaction logs of all inspection decisions and certificate issuances.
+    \item \textbf{Validity \& Expiry Monitoring:} Automatically monitor certificate lifecycles and calculate impending expirations.
+    \item \textbf{Automated Compliance Reminders:} Dispatch automated re-verification alerts to prevent statutory non-compliance.
+    \item \textbf{Role-Tailored Dashboards:} Deliver real-time analytics on clearance rates, inspection pendency, and district compliance.
+\end{enumerate}
+
+%======================================================================
+% 4. WORK PLAN
+%======================================================================
+\section{Work Plan}
+The project is planned as a software-only web platform executed over an intensive four-week delivery timeline structured into four progressive phases:
+
+\begin{tcolorbox}[enhanced, colback=white, colframe=primarynavy!40, boxrule=0.8pt, arc=2mm, title={\color{primarynavy}\textbf{Phase I: Requirement Analysis \& System Design (Week 1)}}]
+    \begin{itemize}
+        \item Analyze statutory Legal Metrology Act provisions and SIH26036 requirements.
+        \item Formulate functional specifications and model multi-actor regulatory workflows.
+        \item Design the layered Modular Monolith system architecture and PostgreSQL schema.
+        \item Establish stateless JWT authentication, password hashing, and Role-Based Access Control (RBAC).
+        \item Produce wireframes and modern responsive UI layout designs for all user personas.
+    \end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced, colback=white, colframe=primarynavy!40, boxrule=0.8pt, arc=2mm, title={\color{primarynavy}\textbf{Phase II: Core System Development (Week 2)}}]
+    \begin{itemize}
+        \item Implement user account management and commercial stakeholder profile modules.
+        \item Build the centralized instrument registry with validation for accuracy classes and capacities.
+        \item Develop the guided verification and re-verification application submission wizard.
+        \item Implement document upload handling for calibration challans, test certificates, and photographs.
+        \item Construct the multi-state application status tracking state machine.
+    \end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced, colback=white, colframe=primarynavy!40, boxrule=0.8pt, arc=2mm, title={\color{primarynavy}\textbf{Phase III: Verification, Scheduling \& Certification (Week 3)}}]
+    \begin{itemize}
+        \item Implement dynamic inspection scheduling and allocation for LMOs and GATC test centres.
+        \item Construct the mobile-responsive digital inspection form for recording standard load observations.
+        \item Develop automated tolerance checking algorithms against Maximum Permissible Error (MPE) thresholds.
+        \item Engineer the ReportLab PDF certificate engine to assemble official government-format certificates.
+        \item Integrate dynamic vector QR code synthesis embedding SHA-256 integrity digests.
+        \item Deploy the public, unauthenticated certificate verification endpoint.
+    \end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced, colback=white, colframe=primarynavy!40, boxrule=0.8pt, arc=2mm, title={\color{primarynavy}\textbf{Phase IV: Dashboards, Notifications \& System Integration (Week 4)}}]
+    \begin{itemize}
+        \item Build role-tailored analytics dashboards for Business Owners, Officers, and Administrators.
+        \item Implement automated background routines for certificate validity tracking and expiry calculation.
+        \item Integrate search, multi-parameter filtering, and audit log exploration capabilities.
+        \item Conduct comprehensive functional, integration, and security testing across all subsystems.
+        \item Fix defects, finalize user documentation, and deploy the working web prototype.
+    \end{itemize}
+\end{tcolorbox}
+
+\newpage
+
+%======================================================================
+% 5. METHODOLOGY & SYSTEM ARCHITECTURE
+%======================================================================
+\section{Methodology}
+The project adopts an \textbf{Agile and Iterative Software Development Lifecycle (SDLC)}, developing the platform in weekly time-boxed sprint increments to ensure rapid feedback and verification against problem statement requirements.
+
+\begin{center}
+\begin{tcolorbox}[enhanced, colback=lightslate, colframe=accentblue, width=0.95\textwidth, arc=2mm]
+    \centering
+    \textbf{\color{primarynavy}Iterative Engineering Pipeline:}\\
+    \small \textbf{Requirements Analysis} $\longrightarrow$ \textbf{System Design} $\longrightarrow$ \textbf{FastAPI Backend} $\longrightarrow$ \textbf{Next.js UI} $\longrightarrow$ \textbf{Integration} $\longrightarrow$ \textbf{Validation}
+\end{tcolorbox}
+\end{center}
+
+\subsection*{Major System Modules}
+The platform is organized into thirteen specialized modules that collectively implement the verification ecosystem:
+\begin{center}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{XXX}
+    $\bullet$ Authentication \& RBAC & $\bullet$ Stakeholder Profiles & $\bullet$ Instrument Catalog \\
+    $\bullet$ Application Management & $\bullet$ Scheduling \& Allocation & $\bullet$ Field Inspection Module \\
+    $\bullet$ Digital Certificate Engine & $\bullet$ QR-Based Verification & $\bullet$ Document Repository \\
+    $\bullet$ Notification \& Reminders & $\bullet$ Role Dashboards & $\bullet$ Search \& Filtering \\
+    $\bullet$ Regulatory Audit Logging & & \\
+\end{tabularx}
+\end{center}
+
+%======================================================================
+% 6. ORGANISATION OF WORK ELEMENT
+%======================================================================
+\section{Organisation of Work Element}
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{|>{\columncolor{lightslate}}p{4.6cm}|X|}
+\hline
+\rowcolor{tablehead}
+\textbf{\color{white}Work Element} & \textbf{\color{white}Major Technical Activities} \\ \hline
+\textbf{Requirement Analysis} & Problem domain study, legal metrology rules analysis, and requirement specification. \\ \hline
+\textbf{UI/UX Design} & Responsive web layout, guided form wizards, role dashboards, and user workflows. \\ \hline
+\textbf{Database Development} & PostgreSQL schema modeling, relationship constraints, indexes, and Alembic migrations. \\ \hline
+\textbf{Backend Development} & FastAPI REST controllers, Pydantic validation, business rules, and state machine. \\ \hline
+\textbf{Frontend Development} & Next.js App Router interfaces, TypeScript contracts, Tailwind CSS styling, and RTK state. \\ \hline
+\textbf{Verification Module} & Inspection scheduling, digital load checklist, MPE calculation, and pass/fail logic. \\ \hline
+\textbf{Certificate Module} & ReportLab programmatic PDF generation, SHA-256 hashing, and vector QR rendering. \\ \hline
+\textbf{Notification Module} & Expiry calculation routines, compliance monitoring, and automated reminder alerts. \\ \hline
+\textbf{Testing \& QA} & Unit testing (Pytest), API integration testing, security checks, and cross-browser QA. \\ \hline
+\textbf{System Integration} & Connecting frontend, API services, database, and background tasks into a unified monolith. \\ \hline
+\textbf{Technical Documentation} & Comprehensive project report, architectural design specifications, and user manuals. \\ \hline
+\end{tabularx}
+\end{table}
+
+%======================================================================
+% 7. TIME SCHEDULE
+%======================================================================
+\section{Time Schedule \& Deliverables}
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{|>{\columncolor{lightslate}\bfseries}l|p{6.2cm}|X|}
+\hline
+\rowcolor{tablehead}
+\textbf{\color{white}Timeline} & \textbf{\color{white}Major Project Activities} & \textbf{\color{white}Expected Deliverables} \\ \hline
+Week 1 & Legal metrology workflow analysis, architectural setup, schema design, authentication, and RBAC implementation. & Architecture specification, DB schema, UI wireframes, functional login, and role permissions. \\ \hline
+Week 2 & Stakeholder management, instrument onboarding, application wizard, document uploads, and tracking engine. & Operational instrument catalog, application submission flow, and live status tracking interface. \\ \hline
+Week 3 & Inspection scheduling, officer allocation, MPE error checklist, digital PDF certificate engine, and public QR portal. & End-to-end inspection recording, ReportLab certificate rendering, and public QR validation. \\ \hline
+Week 4 & Role dashboards, expiry monitoring, search/reporting tools, full system integration, bug fixes, and demo finalization. & Fully integrated, tested, and demonstrable web prototype ready for hackathon evaluation. \\ \hline
+\end{tabularx}
+\end{table}
+
+\newpage
+
+%======================================================================
+% 8. PROPOSED OUTCOMES
+%======================================================================
+\section{Proposed Outcomes and Key Deliverables}
+Upon successful completion, METRIX will deliver a fully operational web prototype that establishes:
+\begin{itemize}
+    \item \textbf{Centralized Digital Registry:} Searchable records of all commercial measuring instruments.
+    \item \textbf{Paperless Workflow:} End-to-end digital submission, tracking, and certification.
+    \item \textbf{Transparent Allocation:} Automated workload balancing across inspection officers and test centres.
+    \item \textbf{Accurate Field Recording:} Immediate on-site computation of Maximum Permissible Error tolerances.
+    \item \textbf{Verifiable Anti-Tamper Certificates:} QR-enabled, SHA-256 secured digital verification certificates.
+    \item \textbf{Consumer Empowerment:} Zero-login mobile QR scanning for instantaneous calibration verification.
+    \item \textbf{Cyclical Compliance:} Automated expiry tracking and notifications that prompt timely re-verification.
+    \item \textbf{Executive Governance:} Comprehensive pendency dashboards and regulatory audit trails.
+\end{itemize}
+
+%======================================================================
+% 9. BUDGET ESTIMATES
+%======================================================================
+\section{Budget Estimates}
+
+\subsection*{1. Software Development, Hosting \& Cloud Infrastructure}
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{0.88\textwidth}{|X|>{\raggedleft\arraybackslash}p{3.2cm}|}
+\hline
+\rowcolor{tablehead}
+\textbf{\color{white}Expense Item} & \textbf{\color{white}Estimated Cost} \\ \hline
+Software Development Tools (VS Code, Git, Python, Node.js) & \INR 0 \\ \hline
+Open-Source Frameworks (FastAPI, Next.js, React, Tailwind CSS) & \INR 0 \\ \hline
+Database Engine (PostgreSQL 14+) & \INR 0 \\ \hline
+Testing \& Verification Utilities (Pytest) & \INR 0 \\ \hline
+Cloud Application Hosting & \INR 1,500 \\ \hline
+Domain Name / DNS Registration & \INR 1,000 \\ \hline
+Cloud Document / File Storage & \INR 1,000 \\ \hline
+\rowcolor{tablerow}
+\textbf{Subtotal (Development \& Hosting)} & \textbf{\INR 3,500} \\ \hline
+\end{tabularx}
+\end{table}
+\textit{\footnotesize The project maximizes open-source frameworks and free-tier academic developer resources.}
+
+\subsection*{2. Documentation, Report Printing \& Binding}
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{0.88\textwidth}{|X|>{\raggedleft\arraybackslash}p{3.2cm}|}
+\hline
+\rowcolor{tablehead}
+\textbf{\color{white}Expense Item} & \textbf{\color{white}Estimated Cost} \\ \hline
+Project Proposal \& Report Printing & \INR 1,000 \\ \hline
+Hardbound Report Binding \& Presentation Materials & \INR 1,000 \\ \hline
+\rowcolor{tablerow}
+\textbf{Subtotal (Documentation)} & \textbf{\INR 2,000} \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection*{3. Miscellaneous \& Contingency}
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{0.88\textwidth}{|X|>{\raggedleft\arraybackslash}p{3.2cm}|}
+\hline
+\rowcolor{tablehead}
+\textbf{\color{white}Expense Item} & \textbf{\color{white}Estimated Cost} \\ \hline
+Miscellaneous Project Expenses \& Contingency & \INR 1,000 \\ \hline
+\rowcolor{tablerow}
+\textbf{Subtotal (Contingency)} & \textbf{\INR 1,000} \\ \hline
+\end{tabularx}
+\end{table}
+
+\begin{center}
+\begin{tcolorbox}[
+    enhanced,
+    colback=lightslate,
+    colframe=primarynavy,
+    width=0.65\textwidth,
+    arc=2.5mm,
+    boxrule=1.2pt,
+    center
+]
+    \centering
+    {\large \textbf{\color{primarynavy}Total Estimated Project Budget: \INR 6,500}}
+\end{tcolorbox}
+\end{center}
+\textit{\footnotesize Existing laboratory computers, campus network, and personal development workstations will be used. No dedicated hardware is required as the project is purely software-based.}
+
+\newpage
+
+%======================================================================
+% 10. UTILIZATION OF PROJECT OUTCOMES
+%======================================================================
+\section{Utilization of Project Outcomes}
+The proposed METRIX system serves as a production-grade prototype for digitizing legal metrology operations across India. Target beneficiaries include:
+\begin{itemize}
+    \item \textbf{State Legal Metrology Departments:} Streamlined application processing and district-level governance.
+    \item \textbf{Legal Metrology Officers (LMOs):} Mobile digital inspection tools that eliminate paper ledger entries.
+    \item \textbf{Government Approved Test Centres (GATCs):} Structured calibration workflows for specialized equipment.
+    \item \textbf{Commercial Establishments \& Traders:} Friction-free verification compliance and digital certificates.
+    \item \textbf{Consumers \& Public Citizens:} Instant verification of instrument authenticity at retail counters.
+\end{itemize}
+
+%======================================================================
+% 11. INSTITUTIONAL SIGNATURES & ENDORSEMENTS
+%======================================================================
+\section{Endorsements and Submission}
+
+\vspace{0.2cm}
+
+\textbf{\large Project Client / Problem Statement Details:}\\
+\textbf{Statement ID:} SIH26036 \textbar{} Smart India Hackathon (SIH 2026)\\
+\textbf{Client Ministry:} Ministry of Consumer Affairs, Food \& Public Distribution\\
+\textbf{Department:} Department of Consumer Affairs, Government of India
+
+\vspace{0.6cm}
+
+% Signature Boxes
+\begin{table}[htbp]
+\centering
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\textwidth}{|X|X|}
+\hline
+\textbf{\color{primarynavy}Supervisor / Project Guide} & \textbf{\color{primarynavy}Endorsement of Lab In-Charge} \\ \hline
+\vspace{0.1cm}
+\textbf{Name:} Prof. Mamta Garg & \vspace{0.1cm}\textbf{Name:} \hrulefill \\
+\textbf{Designation:} Dean, Dept. of CSE & \textbf{Designation:} \hrulefill \\
+\vspace{0.8cm}
+\textbf{Signature:} \hrulefill & \vspace{0.8cm}\textbf{Signature:} \hrulefill \\
+\textbf{Date:} \hrulefill & \textbf{Date:} \hrulefill \\ \hline
+\end{tabularx}
+\end{table}
+
+\vspace{0.4cm}
+
+\textbf{\large Submitted by (Student Investigators):}
+
+\begin{table}[htbp]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|l|l|X|>{\centering\arraybackslash}p{4.5cm}|}
+\hline
+\rowcolor{tablehead}
+\textbf{\color{white}S.No.} & \textbf{\color{white}Student Name} & \textbf{\color{white}University Roll No.} & \textbf{\color{white}Signature} \\ \hline
+1. & \textbf{Vidit J Tiwari} & 23EJICS178 & \vspace{0.4cm} \hrulefill \\ \hline
+2. & \textbf{Tamanna Parveen} & 23EJICS169 & \vspace{0.4cm} \hrulefill \\ \hline
+3. & \textbf{Vishnu Kant} & 23EJICS182 & \vspace{0.4cm} \hrulefill \\ \hline
+\end{tabularx}
+\end{table}
+
+\vspace{0.3cm}
+\begin{center}
+    \small \color{gray}
+    Department of Computer Science \& Engineering \textbar{} Jodhpur Institute of Engineering and Technology (Autonomous)
+\end{center}
+
+\end{document}
