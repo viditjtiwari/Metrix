@@ -56,6 +56,7 @@ class Settings(BaseSettings):
 
     # Certificate & Public Verification Settings
     CERTIFICATE_VALIDITY_DAYS: int = 365
+    CERTIFICATE_EXPIRY_WARNING_DAYS: int = 30
     PUBLIC_VERIFICATION_BASE_URL: str = "http://localhost:3000/verify"
     CERTIFICATE_STORAGE_DIR: str = str(_BACKEND_DIR / "storage" / "certificates")
 

@@ -2,12 +2,13 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from app.models.enums import ApplicationStatus, InspectionResult, UserRole
+from app.models.enums import ApplicationStatus, InspectionResult, NotificationType, UserRole
 from app.models.inspection import Inspection, InspectionObservation
 from app.models.user import User
 from app.repositories.application_repository import application_repository
 from app.repositories.inspection_repository import inspection_repository
 from app.repositories.user_repository import user_repository
+from app.services.notification_service import notification_service
 from app.schemas.inspection import (
     AssignmentRequest,
     InspectionDetailResponse,
@@ -117,6 +118,26 @@ class InspectionService:
                 remarks=f"Inspection scheduled for {schedule_data.scheduled_date} at {schedule_data.scheduled_time or 'TBD'}",
             )
 
+        notification_service.send_notification(
+            db,
+            user_id=application.applicant_id,
+            type=NotificationType.APPLICATION_SCHEDULED,
+            title="Inspection Scheduled",
+            message=f"Inspection for application {application.application_number} has been scheduled for {schedule_data.scheduled_date}.",
+            entity_type="APPLICATION",
+            entity_id=application.id,
+        )
+        if assigned_to_id:
+            notification_service.send_notification(
+                db,
+                user_id=assigned_to_id,
+                type=NotificationType.INSPECTION_ASSIGNED,
+                title="Inspection Assigned",
+                message=f"You have been assigned to inspect application {application.application_number}.",
+                entity_type="APPLICATION",
+                entity_id=application.id,
+            )
+
         db.commit()
         refreshed = inspection_repository.get_by_id(db, inspection.id)
         return self._to_detail_response(refreshed)
@@ -183,6 +204,16 @@ class InspectionService:
             to_status=application.status,
             changed_by_id=current_user.id,
             remarks=f"Verifier assigned to {target_user.full_name} ({target_user.role.value})",
+        )
+
+        notification_service.send_notification(
+            db,
+            user_id=target_user.id,
+            type=NotificationType.INSPECTION_ASSIGNED,
+            title="Inspection Assigned",
+            message=f"You have been assigned to verify application {application.application_number}.",
+            entity_type="APPLICATION",
+            entity_id=application.id,
         )
 
         db.commit()
@@ -417,6 +448,36 @@ class InspectionService:
             to_status=final_status,
             changed_by_id=current_user.id,
             remarks=result_in.remarks or f"Verification decision: {result_in.result.value}",
+        )
+
+        notification_service.send_notification(
+            db,
+            user_id=application.applicant_id,
+            type=NotificationType.INSPECTION_COMPLETED,
+            title="Inspection Completed",
+            message=f"Inspection tests completed for application {application.application_number}.",
+            entity_type="APPLICATION",
+            entity_id=application.id,
+        )
+
+        decision_type = (
+            NotificationType.APPLICATION_VERIFIED
+            if final_status == ApplicationStatus.VERIFIED
+            else NotificationType.APPLICATION_REJECTED
+        )
+        decision_title = (
+            "Application Verified"
+            if final_status == ApplicationStatus.VERIFIED
+            else "Application Rejected"
+        )
+        notification_service.send_notification(
+            db,
+            user_id=application.applicant_id,
+            type=decision_type,
+            title=decision_title,
+            message=f"Verification decision for application {application.application_number}: {final_status.value}.",
+            entity_type="APPLICATION",
+            entity_id=application.id,
         )
 
         db.commit()

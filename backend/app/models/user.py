@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from app.models.application import VerificationApplication, ApplicationStatusHistory
     from app.models.inspection import Inspection
     from app.models.certificate import Certificate
+    from app.models.notification import Notification
 
 
 class User(Base, TimestampMixin):
@@ -58,6 +59,11 @@ class User(Base, TimestampMixin):
     # Certificates issued by this officer/admin
     issued_certificates: Mapped[List[Certificate]] = relationship(
         "Certificate", back_populates="issued_by"
+    )
+
+    # In-app notifications for this user
+    notifications: Mapped[List[Notification]] = relationship(
+        "Notification", back_populates="user", cascade="all, delete-orphan"
     )
 
 

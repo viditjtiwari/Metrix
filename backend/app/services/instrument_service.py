@@ -1,10 +1,10 @@
 import random
 import string
 from datetime import datetime, timezone
-from typing import Tuple
+from typing import Optional, Tuple
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from app.models.enums import UserRole
+from app.models.enums import InstrumentType, UserRole
 from app.models.instrument import Instrument
 from app.models.user import User
 from app.repositories.instrument_repository import instrument_repository
@@ -64,18 +64,37 @@ class InstrumentService:
         return instrument
 
     def list_instruments(
-        self, db: Session, current_user: User, page: int = 1, page_size: int = 20
+        self,
+        db: Session,
+        current_user: User,
+        registration_number: Optional[str] = None,
+        serial_number: Optional[str] = None,
+        instrument_type: Optional[InstrumentType] = None,
+        manufacturer: Optional[str] = None,
+        location: Optional[str] = None,
+        owner_id: Optional[int] = None,
+        page: int = 1,
+        page_size: int = 20,
     ) -> InstrumentListResponse:
         skip = max(0, (page - 1) * page_size)
 
+        # Enforce boundary: owners can ONLY see their own instruments
         if current_user.role == UserRole.INSTRUMENT_OWNER:
-            items, total = instrument_repository.list_by_owner(
-                db, owner_id=current_user.id, skip=skip, limit=page_size
-            )
+            effective_owner_id = current_user.id
         else:
-            items, total = instrument_repository.list_all(
-                db, skip=skip, limit=page_size
-            )
+            effective_owner_id = owner_id
+
+        items, total = instrument_repository.search(
+            db,
+            owner_id=effective_owner_id,
+            registration_number=registration_number,
+            serial_number=serial_number,
+            instrument_type=instrument_type,
+            manufacturer=manufacturer,
+            location=location,
+            skip=skip,
+            limit=page_size,
+        )
 
         return InstrumentListResponse(
             items=[InstrumentResponse.model_validate(item) for item in items],

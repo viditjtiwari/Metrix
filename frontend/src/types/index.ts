@@ -20,7 +20,6 @@ export type ApplicationStatus =
   | "REJECTED";
 
 export type InspectionResult = "VERIFIED" | "REJECTED";
-
 export type InstrumentType =
   | "WEIGHING_SCALE"
   | "ELECTRONIC_BALANCE"
@@ -232,4 +231,68 @@ export interface CertificateIssueRequest {
   remarks?: string;
 }
 
+export interface CertificateListResponse {
+  items: CertificateDetailResponse[];
+  total: number;
+  page: number;
+  page_size: number;
+}
 
+export type NotificationType =
+  | "APPLICATION_SUBMITTED"
+  | "APPLICATION_SCHEDULED"
+  | "INSPECTION_ASSIGNED"
+  | "INSPECTION_COMPLETED"
+  | "APPLICATION_VERIFIED"
+  | "APPLICATION_REJECTED"
+  | "CERTIFICATE_ISSUED"
+  | "CERTIFICATE_EXPIRING"
+  | "CERTIFICATE_EXPIRED";
+
+export interface NotificationResponse {
+  id: number;
+  user_id: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  read_at?: string | null;
+  entity_type?: string | null;
+  entity_id?: number | null;
+}
+
+export interface NotificationListResponse {
+  items: NotificationResponse[];
+  total: number;
+  unread_count: number;
+  page: number;
+  page_size: number;
+}
+
+export interface DashboardSummaryResponse {
+  role: UserRole;
+  metrics: Record<string, any>;
+}
+
+export interface InstrumentResponse {
+  id: number;
+  registration_number: string;
+  owner_id: number;
+  instrument_type: InstrumentType;
+  manufacturer: string;
+  model_name: string;
+  serial_number: string;
+  capacity?: string | null;
+  location: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InstrumentListResponse {
+  items: InstrumentResponse[];
+  total: number;
+  page: number;
+  page_size: number;
+}

@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 from app.models.enums import CertificateStatus
 
@@ -60,3 +60,11 @@ class PublicCertificateVerificationResponse(BaseModel):
 class CertificateIssueRequest(BaseModel):
     """Request payload for issuing a certificate."""
     remarks: Optional[str] = None
+
+
+class CertificateListResponse(BaseModel):
+    """Paginated collection of certificates for search and expiry tracking."""
+    items: List[CertificateDetailResponse]
+    total: int
+    page: int
+    page_size: int

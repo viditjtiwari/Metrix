@@ -22,7 +22,7 @@ export const baseApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Health", "Auth", "Instruments", "Applications", "Certificates", "Inspections"],
+  tagTypes: ["Health", "Auth", "Instruments", "Applications", "Certificates", "Inspections", "Notifications", "Dashboard"],
   endpoints: (builder) => ({
     getHealth: builder.query<HealthStatus, void>({
       query: () => "/health",

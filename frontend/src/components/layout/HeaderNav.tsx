@@ -18,12 +18,38 @@ export function HeaderNav() {
         Home
       </Link>
       {isAuthenticated && (
-        <Link
-          href="/applications"
-          className="text-slate-600 hover:text-slate-900 transition font-medium"
-        >
-          Applications
-        </Link>
+        <>
+          <Link
+            href="/dashboard"
+            className="text-slate-600 hover:text-slate-900 transition font-medium"
+          >
+            Dashboard
+          </Link>
+          <Link
+            href="/applications"
+            className="text-slate-600 hover:text-slate-900 transition font-medium"
+          >
+            Applications
+          </Link>
+          <Link
+            href="/search"
+            className="text-slate-600 hover:text-slate-900 transition font-medium"
+          >
+            Search
+          </Link>
+          <Link
+            href="/reports"
+            className="text-slate-600 hover:text-slate-900 transition font-medium"
+          >
+            Reports
+          </Link>
+          <Link
+            href="/notifications"
+            className="text-slate-600 hover:text-slate-900 transition font-medium"
+          >
+            Notifications
+          </Link>
+        </>
       )}
 
       {isAuthenticated && user ? (

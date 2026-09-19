@@ -1,7 +1,8 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user, get_db, require_role
-from app.models.enums import UserRole
+from app.models.enums import InstrumentType, UserRole
 from app.models.user import User
 from app.schemas.instrument import (
     InstrumentCreate,
@@ -37,17 +38,32 @@ def register_instrument(
     "",
     response_model=InstrumentListResponse,
     status_code=status.HTTP_200_OK,
-    summary="List Instruments",
+    summary="List and Search Instruments",
 )
 def list_instruments(
+    registration_number: Optional[str] = Query(None, description="Filter by registration number"),
+    serial_number: Optional[str] = Query(None, description="Filter by serial number"),
+    instrument_type: Optional[InstrumentType] = Query(None, description="Filter by instrument type"),
+    manufacturer: Optional[str] = Query(None, description="Filter by manufacturer"),
+    location: Optional[str] = Query(None, description="Filter by location"),
+    owner_id: Optional[int] = Query(None, description="Filter by owner ID (Admin/LMO only)"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Page size"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> InstrumentListResponse:
-    """List registered instruments (owners view only their own; officers view all)."""
+    """List registered instruments with optional search filters (owners view only their own)."""
     return instrument_service.list_instruments(
-        db, current_user=current_user, page=page, page_size=page_size
+        db,
+        current_user=current_user,
+        registration_number=registration_number,
+        serial_number=serial_number,
+        instrument_type=instrument_type,
+        manufacturer=manufacturer,
+        location=location,
+        owner_id=owner_id,
+        page=page,
+        page_size=page_size,
     )
 
 

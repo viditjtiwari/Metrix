@@ -16,13 +16,23 @@ export const applicationApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getApplications: builder.query<
       ApplicationListResponse,
-      { status?: ApplicationStatus; page?: number; pageSize?: number } | void
+      {
+        status?: ApplicationStatus;
+        application_number?: string;
+        instrument_id?: number;
+        page?: number;
+        pageSize?: number;
+        page_size?: number;
+      } | void
     >({
       query: (params) => {
         const queryParams = new URLSearchParams();
         if (params?.status) queryParams.append("status", params.status);
+        if (params?.application_number) queryParams.append("application_number", params.application_number);
+        if (params?.instrument_id) queryParams.append("instrument_id", String(params.instrument_id));
         if (params?.page) queryParams.append("page", params.page.toString());
-        if (params?.pageSize) queryParams.append("page_size", params.pageSize.toString());
+        const ps = params?.page_size || params?.pageSize;
+        if (ps) queryParams.append("page_size", ps.toString());
         const qs = queryParams.toString();
         return `/applications${qs ? `?${qs}` : ""}`;
       },

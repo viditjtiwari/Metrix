@@ -1,11 +1,11 @@
 import random
 import string
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Dict, List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.application import VerificationApplication
-from app.models.enums import ApplicationStatus, UserRole
+from app.models.enums import ApplicationStatus, NotificationType, UserRole
 from app.models.user import User
 from app.repositories.application_repository import application_repository
 from app.repositories.instrument_repository import instrument_repository
@@ -14,6 +14,7 @@ from app.schemas.application import (
     ApplicationListResponse,
     ApplicationResponse,
 )
+from app.services.notification_service import notification_service
 
 ALLOWED_TRANSITIONS: Dict[ApplicationStatus, List[ApplicationStatus]] = {
     ApplicationStatus.DRAFT: [ApplicationStatus.SUBMITTED],
@@ -97,6 +98,16 @@ class ApplicationService:
             changed_by_id=current_user.id,
             remarks="Application created" + (" and submitted" if app_data.submit_now else " as draft"),
         )
+        if app_data.submit_now:
+            notification_service.send_notification(
+                db,
+                user_id=current_user.id,
+                type=NotificationType.APPLICATION_SUBMITTED,
+                title="Application Submitted",
+                message=f"Verification application {application.application_number} has been submitted.",
+                entity_type="APPLICATION",
+                entity_id=application.id,
+            )
 
         db.commit()
         db.refresh(application)
@@ -157,6 +168,17 @@ class ApplicationService:
             remarks=remarks,
         )
 
+        if target_status == ApplicationStatus.SUBMITTED:
+            notification_service.send_notification(
+                db,
+                user_id=application.applicant_id,
+                type=NotificationType.APPLICATION_SUBMITTED,
+                title="Application Submitted",
+                message=f"Verification application {application.application_number} has been submitted.",
+                entity_type="APPLICATION",
+                entity_id=application.id,
+            )
+
         db.commit()
         db.refresh(application)
         return application
@@ -184,23 +206,31 @@ class ApplicationService:
         db: Session,
         current_user: User,
         status_filter: Optional[ApplicationStatus] = None,
+        application_number: Optional[str] = None,
+        application_type: Optional[str] = None,
+        instrument_id: Optional[int] = None,
+        instrument_registration_number: Optional[str] = None,
+        date_from: Optional[date] = None,
+        date_to: Optional[date] = None,
         page: int = 1,
         page_size: int = 20,
     ) -> ApplicationListResponse:
         skip = max(0, (page - 1) * page_size)
+        applicant_id = current_user.id if current_user.role == UserRole.INSTRUMENT_OWNER else None
 
-        if current_user.role == UserRole.INSTRUMENT_OWNER:
-            items, total = application_repository.list_by_applicant(
-                db,
-                applicant_id=current_user.id,
-                status=status_filter,
-                skip=skip,
-                limit=page_size,
-            )
-        else:
-            items, total = application_repository.list_all(
-                db, status=status_filter, skip=skip, limit=page_size
-            )
+        items, total = application_repository.search(
+            db,
+            applicant_id=applicant_id,
+            application_number=application_number,
+            status=status_filter,
+            application_type=application_type,
+            instrument_id=instrument_id,
+            instrument_registration_number=instrument_registration_number,
+            date_from=date_from,
+            date_to=date_to,
+            skip=skip,
+            limit=page_size,
+        )
 
         return ApplicationListResponse(
             items=[ApplicationResponse.model_validate(item) for item in items],

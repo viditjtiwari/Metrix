@@ -8,15 +8,17 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.certificate import Certificate
-from app.models.enums import ApplicationStatus, CertificateStatus, UserRole
+from app.models.enums import ApplicationStatus, CertificateStatus, NotificationType, UserRole
 from app.models.user import User
 from app.repositories.application_repository import application_repository
 from app.repositories.certificate_repository import certificate_repository
 from app.schemas.certificate import (
     CertificateDetailResponse,
+    CertificateListResponse,
     CertificateResponse,
     PublicCertificateVerificationResponse,
 )
+from app.services.notification_service import notification_service
 from app.services.pdf_service import pdf_service
 
 
@@ -266,6 +268,16 @@ class CertificateService:
             remarks=remarks or f"Digital Certificate issued: {certificate_number}",
         )
 
+        notification_service.send_notification(
+            db,
+            user_id=application.applicant_id,
+            type=NotificationType.CERTIFICATE_ISSUED,
+            title="Digital Certificate Issued",
+            message=f"Digital verification certificate {certificate_number} has been issued for instrument '{instrument.registration_number}'.",
+            entity_type="CERTIFICATE",
+            entity_id=cert.id,
+        )
+
         db.commit()
         refreshed_cert = certificate_repository.get_by_id_with_relations(db, cert.id)
         return self._to_detail_response(refreshed_cert)
@@ -372,6 +384,102 @@ class CertificateService:
         pdf_bytes = pdf_service.get_pdf_bytes(cert.pdf_path)
         filename = f"{cert.certificate_number}.pdf"
         return pdf_bytes, filename
+
+    def search_certificates(
+        self,
+        db: Session,
+        *,
+        current_user: User,
+        certificate_number: Optional[str] = None,
+        instrument_id: Optional[int] = None,
+        instrument_registration_number: Optional[str] = None,
+        status: Optional[CertificateStatus] = None,
+        issue_date_from: Optional[date] = None,
+        issue_date_to: Optional[date] = None,
+        expiry_date_from: Optional[date] = None,
+        expiry_date_to: Optional[date] = None,
+        owner_id: Optional[int] = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> CertificateListResponse:
+        """Search and filter certificates respecting ownership boundaries."""
+        skip = max(0, (page - 1) * page_size)
+        effective_owner_id = (
+            current_user.id
+            if current_user.role == UserRole.INSTRUMENT_OWNER
+            else owner_id
+        )
+
+        items, total = certificate_repository.search(
+            db,
+            owner_id=effective_owner_id,
+            certificate_number=certificate_number,
+            instrument_id=instrument_id,
+            instrument_registration_number=instrument_registration_number,
+            status=status,
+            issue_date_from=issue_date_from,
+            issue_date_to=issue_date_to,
+            expiry_date_from=expiry_date_from,
+            expiry_date_to=expiry_date_to,
+            skip=skip,
+            limit=page_size,
+        )
+
+        return CertificateListResponse(
+            items=[self._to_detail_response(item) for item in items],
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
+
+    def list_expiring_certificates(
+        self,
+        db: Session,
+        *,
+        current_user: User,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> CertificateListResponse:
+        """List active certificates entering warning period."""
+        skip = max(0, (page - 1) * page_size)
+        owner_id = current_user.id if current_user.role == UserRole.INSTRUMENT_OWNER else None
+        items, total = certificate_repository.list_expiring(
+            db,
+            owner_id=owner_id,
+            warning_days=settings.CERTIFICATE_EXPIRY_WARNING_DAYS,
+            skip=skip,
+            limit=page_size,
+        )
+        return CertificateListResponse(
+            items=[self._to_detail_response(item) for item in items],
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
+
+    def list_expired_certificates(
+        self,
+        db: Session,
+        *,
+        current_user: User,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> CertificateListResponse:
+        """List expired certificates respecting ownership boundaries."""
+        skip = max(0, (page - 1) * page_size)
+        owner_id = current_user.id if current_user.role == UserRole.INSTRUMENT_OWNER else None
+        items, total = certificate_repository.list_expired(
+            db,
+            owner_id=owner_id,
+            skip=skip,
+            limit=page_size,
+        )
+        return CertificateListResponse(
+            items=[self._to_detail_response(item) for item in items],
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
 
 
 certificate_service = CertificateService()

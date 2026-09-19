@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
@@ -51,22 +52,34 @@ def create_application(
     "",
     response_model=ApplicationListResponse,
     status_code=status.HTTP_200_OK,
-    summary="List Verification Applications",
+    summary="List and Search Verification Applications",
 )
 def list_applications(
     status_filter: Optional[ApplicationStatus] = Query(
         None, alias="status", description="Filter by status"
     ),
+    application_number: Optional[str] = Query(None, description="Filter by application number"),
+    application_type: Optional[str] = Query(None, description="Filter by application type"),
+    instrument_id: Optional[int] = Query(None, description="Filter by instrument ID"),
+    instrument_registration_number: Optional[str] = Query(None, description="Filter by instrument registration number"),
+    date_from: Optional[date] = Query(None, description="Created on/after (YYYY-MM-DD)"),
+    date_to: Optional[date] = Query(None, description="Created on/before (YYYY-MM-DD)"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Page size"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ApplicationListResponse:
-    """List verification applications with optional status filter."""
+    """List verification applications with search and date range filters."""
     return application_service.list_applications(
         db,
         current_user=current_user,
         status_filter=status_filter,
+        application_number=application_number,
+        application_type=application_type,
+        instrument_id=instrument_id,
+        instrument_registration_number=instrument_registration_number,
+        date_from=date_from,
+        date_to=date_to,
         page=page,
         page_size=page_size,
     )
