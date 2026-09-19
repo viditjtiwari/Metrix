@@ -1,5 +1,6 @@
 import { baseApi } from "@/services/api";
 import { InstrumentListResponse, InstrumentType } from "@/types";
+import { Instrument, InstrumentCreateRequest } from "./instrumentTypes";
 
 export const instrumentApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -33,7 +34,16 @@ export const instrumentApi = baseApi.injectEndpoints({
       },
       providesTags: ["Instruments"],
     }),
+
+    createInstrument: builder.mutation<Instrument, InstrumentCreateRequest>({
+      query: (data) => ({
+        url: "/instruments",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Instruments"],
+    }),
   }),
 });
 
-export const { useSearchInstrumentsQuery } = instrumentApi;
+export const { useSearchInstrumentsQuery, useCreateInstrumentMutation } = instrumentApi;

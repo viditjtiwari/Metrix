@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useGetApplicationsQuery } from "@/features/applications/applicationApi";
 import { ApplicationStatusBadge } from "@/features/applications/ApplicationStatusBadge";
+import { RegisterInstrumentModal } from "@/features/instruments/RegisterInstrumentModal";
+import { CreateApplicationModal } from "@/features/applications/CreateApplicationModal";
 import { useAppSelector } from "@/store/hooks";
 import { ApplicationStatus } from "@/types";
 
@@ -20,6 +22,10 @@ const statusFilters: { label: string; value?: ApplicationStatus }[] = [
 export default function ApplicationsListPage() {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [selectedStatus, setSelectedStatus] = useState<ApplicationStatus | undefined>();
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [preselectedInstId, setPreselectedInstId] = useState<number | undefined>();
+  const [bannerMessage, setBannerMessage] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = useGetApplicationsQuery({
     status: selectedStatus,
@@ -58,19 +64,50 @@ export default function ApplicationsListPage() {
               : "Review, schedule, and execute operational verifications."}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500">Active Role:</span>
-          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 text-xs font-semibold">
-            {user?.role}
-          </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {(user?.role === "INSTRUMENT_OWNER" || user?.role === "ADMIN") && (
+            <>
+              <button
+                onClick={() => {
+                  setBannerMessage(null);
+                  setShowRegisterModal(true);
+                }}
+                className="px-3.5 py-1.5 rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50 text-xs font-semibold transition"
+              >
+                + Register Instrument
+              </button>
+              <button
+                onClick={() => {
+                  setBannerMessage(null);
+                  setPreselectedInstId(undefined);
+                  setShowCreateModal(true);
+                }}
+                className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition shadow-xs"
+              >
+                + New Application
+              </button>
+            </>
+          )}
           <button
             onClick={() => refetch()}
-            className="ml-2 px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs hover:bg-slate-50 transition"
+            className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs hover:bg-slate-50 transition"
           >
             Refresh
           </button>
         </div>
       </div>
+
+      {bannerMessage && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-800 flex items-center justify-between shadow-xs">
+          <span>{bannerMessage}</span>
+          <button
+            onClick={() => setBannerMessage(null)}
+            className="text-emerald-600 hover:text-emerald-900 font-bold ml-4"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
@@ -157,6 +194,32 @@ export default function ApplicationsListPage() {
           </div>
         )}
       </div>
+
+      {showRegisterModal && (
+        <RegisterInstrumentModal
+          onClose={() => setShowRegisterModal(false)}
+          onSuccess={(inst) => {
+            setBannerMessage(
+              `Instrument registered successfully! Reg Number: ${inst.registration_number}`
+            );
+            setPreselectedInstId(inst.id);
+            setShowCreateModal(true);
+          }}
+        />
+      )}
+
+      {showCreateModal && (
+        <CreateApplicationModal
+          preselectedInstrumentId={preselectedInstId}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={(newApp) => {
+            setBannerMessage(
+              `Application created successfully! Application Number: ${newApp.application_number} (${newApp.status})`
+            );
+            refetch();
+          }}
+        />
+      )}
     </div>
   );
 }

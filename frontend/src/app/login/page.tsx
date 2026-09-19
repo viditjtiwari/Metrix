@@ -15,15 +15,12 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
-  const handleRegisterSuccess = (registeredEmail: string) => {
-    setSuccessNotice(
-      `Registration successful for ${registeredEmail}! You may now sign in.`
-    );
-    setActiveTab("login");
+  const handleRegisterSuccess = (_registeredEmail: string) => {
+    router.push("/dashboard");
   };
 
   const handleLoginSuccess = () => {
-    router.push("/");
+    router.push("/dashboard");
   };
 
   return (

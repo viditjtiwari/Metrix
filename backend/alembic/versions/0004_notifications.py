@@ -1,6 +1,6 @@
 """Operations, notifications, and search indexing (Phase 5)
 
-Revision ID: 0004_operations_and_notifications
+Revision ID: 0004_notifications
 Revises: 0003_certificate_management
 Create Date: 2026-09-19 16:00:00.000000
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0004_operations_and_notifications'
+revision: str = '0004_notifications'
 down_revision: Union[str, None] = '0003_certificate_management'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

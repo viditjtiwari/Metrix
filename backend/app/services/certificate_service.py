@@ -282,6 +282,22 @@ class CertificateService:
         refreshed_cert = certificate_repository.get_by_id_with_relations(db, cert.id)
         return self._to_detail_response(refreshed_cert)
 
+    def _verify_certificate_access(self, cert: Certificate, current_user: User) -> None:
+        """Validate that current user has authorized access to the certificate."""
+        if current_user.role == UserRole.INSTRUMENT_OWNER:
+            if cert.instrument.owner_id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not have permission to access this certificate.",
+                )
+        elif current_user.role == UserRole.GATC:
+            insp = cert.application.inspection if cert.application else None
+            if not insp or insp.assigned_to_id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not have permission to access this certificate.",
+                )
+
     def get_certificate(
         self, db: Session, *, certificate_id: int, current_user: User
     ) -> CertificateDetailResponse:
@@ -293,13 +309,7 @@ class CertificateService:
                 detail=f"Certificate with id {certificate_id} not found.",
             )
 
-        if current_user.role == UserRole.INSTRUMENT_OWNER:
-            if cert.instrument.owner_id != current_user.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You do not have permission to view this certificate.",
-                )
-
+        self._verify_certificate_access(cert, current_user)
         return self._to_detail_response(cert)
 
     def get_certificate_by_application(
@@ -318,6 +328,13 @@ class CertificateService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to view this certificate.",
             )
+        elif current_user.role == UserRole.GATC:
+            insp = application.inspection
+            if not insp or insp.assigned_to_id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not have permission to view this certificate.",
+                )
 
         cert = certificate_repository.get_by_application_id(db, application_id)
         if not cert:
@@ -368,12 +385,7 @@ class CertificateService:
                 detail=f"Certificate with id {certificate_id} not found.",
             )
 
-        if current_user.role == UserRole.INSTRUMENT_OWNER:
-            if cert.instrument.owner_id != current_user.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You do not have permission to download this certificate.",
-                )
+        self._verify_certificate_access(cert, current_user)
 
         if not cert.pdf_path or not pdf_service.storage_dir.joinpath(f"{cert.certificate_number}.pdf").exists():
             raise HTTPException(

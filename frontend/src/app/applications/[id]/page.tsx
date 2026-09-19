@@ -85,6 +85,16 @@ export default function ApplicationDetailPage() {
     }
   };
 
+  const handleSubmitDraft = async () => {
+    setActionError(null);
+    try {
+      await updateStatus({ id: applicationId, status: "SUBMITTED", remarks: "Applicant submitted application" }).unwrap();
+      refetch();
+    } catch (err: unknown) {
+      setActionError((err as { data?: { detail?: string } })?.data?.detail || "Submission failed.");
+    }
+  };
+
   if (isLoading) {
     return <div className="p-12 text-center text-xs text-slate-500">Loading application details...</div>;
   }
@@ -122,6 +132,7 @@ export default function ApplicationDetailPage() {
           onOpenAddObs={() => setShowAddObs(true)}
           onOpenResult={() => setShowResult(true)}
           onOpenIssueCert={() => setShowIssueCert(true)}
+          onSubmitDraft={handleSubmitDraft}
         />
       </div>
 

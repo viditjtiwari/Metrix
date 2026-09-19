@@ -2,6 +2,7 @@ import { baseApi } from "@/services/api";
 import {
   ApplicationDetailResponse,
   ApplicationListResponse,
+  ApplicationResponse,
   ApplicationStatus,
   AssignmentRequest,
   InspectionDetailResponse,
@@ -11,6 +12,7 @@ import {
   ScheduleRequest,
   User,
 } from "@/types";
+import { ApplicationCreateRequest } from "./applicationTypes";
 
 export const applicationApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -148,12 +150,25 @@ export const applicationApi = baseApi.injectEndpoints({
         "Inspections",
       ],
     }),
+
+    createApplication: builder.mutation<
+      ApplicationResponse,
+      ApplicationCreateRequest
+    >({
+      query: (data) => ({
+        url: "/applications",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Applications"],
+    }),
   }),
 });
 
 export const {
   useGetApplicationsQuery,
   useGetApplicationQuery,
+  useCreateApplicationMutation,
   useUpdateApplicationStatusMutation,
   useScheduleInspectionMutation,
   useAssignVerifierMutation,

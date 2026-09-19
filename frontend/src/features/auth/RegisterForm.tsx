@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRegisterMutation } from "./authApi";
+import { useRegisterMutation, useLoginMutation } from "./authApi";
+import { useAppDispatch } from "@/store/hooks";
+import { setCredentials } from "./authSlice";
 import { UserRole } from "@/types";
 
 interface RegisterFormProps {
@@ -9,7 +11,10 @@ interface RegisterFormProps {
 }
 
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
-  const [register, { isLoading }] = useRegisterMutation();
+  const dispatch = useAppDispatch();
+  const [register, { isLoading: isRegistering }] = useRegisterMutation();
+  const [login, { isLoading: isLoggingIn }] = useLoginMutation();
+  const isLoading = isRegistering || isLoggingIn;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -52,6 +57,17 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
 
     try {
       await register(payload).unwrap();
+      try {
+        const loginRes = await login({ email, password }).unwrap();
+        dispatch(
+          setCredentials({
+            user: loginRes.user,
+            token: loginRes.access_token,
+          })
+        );
+      } catch {
+        // Fallback if auto-login encounters any transient issue
+      }
       onSuccess(email);
     } catch (err: unknown) {
       const apiErr = err as { data?: { detail?: string }; status?: number };

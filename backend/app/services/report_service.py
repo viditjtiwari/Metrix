@@ -2,6 +2,7 @@ import csv
 import io
 from datetime import date, datetime
 from typing import Optional
+from fastapi import HTTPException, status
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, selectinload
 from app.core.config import settings
@@ -36,6 +37,10 @@ class ReportService:
 
         if current_user.role == UserRole.INSTRUMENT_OWNER:
             stmt = stmt.where(VerificationApplication.applicant_id == current_user.id)
+        elif current_user.role == UserRole.GATC:
+            stmt = stmt.join(Inspection, VerificationApplication.id == Inspection.application_id).where(
+                Inspection.assigned_to_id == current_user.id
+            )
         if status:
             stmt = stmt.where(VerificationApplication.status == status)
         if date_from:
@@ -88,7 +93,12 @@ class ReportService:
             .order_by(Instrument.created_at.desc())
         )
 
-        if current_user.role == UserRole.INSTRUMENT_OWNER:
+        if current_user.role == UserRole.GATC:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="GATC role is not permitted to access instrument registry reports.",
+            )
+        elif current_user.role == UserRole.INSTRUMENT_OWNER:
             stmt = stmt.where(Instrument.owner_id == current_user.id)
 
         instruments = db.execute(stmt).scalars().all()
@@ -209,6 +219,10 @@ class ReportService:
             stmt = stmt.join(Instrument, Certificate.instrument_id == Instrument.id).where(
                 Instrument.owner_id == current_user.id
             )
+        elif current_user.role == UserRole.GATC:
+            stmt = stmt.join(Inspection, Certificate.application_id == Inspection.application_id).where(
+                Inspection.assigned_to_id == current_user.id
+            )
 
         certs = db.execute(stmt).scalars().all()
 
@@ -258,6 +272,12 @@ class ReportService:
         *,
         current_user: User,
     ) -> str:
+        if current_user.role == UserRole.GATC:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="GATC role is not permitted to access certificate expiry reports.",
+            )
+
         today = date.today()
         warning_date = today + settings.CERTIFICATE_EXPIRY_WARNING_DAYS * \
             (date.fromordinal(today.toordinal() + 1) - today)
