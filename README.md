@@ -1,17 +1,19 @@
 # METRIX
 
 > **Online Verification and Digital Certification System for Weighing and Measuring Instruments**  
-> *Based on Smart India Hackathon Problem Statement SIH26036*
+> *Developed for Smart India Hackathon Problem Statement SIH26036 (Department of Consumer Affairs)*
 
 ---
 
 ## 1. Project Summary
 
-METRIX is a modern, modular web platform designed to streamline and digitize the end-to-end legal metrology verification lifecycle for weighing and measuring instruments. It enables business owners to register instruments and apply for verification/re-verification, allows Legal Metrology Officers (LMOs) and Government Approved Test Centres (GATCs) to review, inspect, and record metrological observations, and generates tamper-evident digital certificates with verifiable QR codes.
+**METRIX** is a web-based legal metrology verification platform designed to digitize the statutory lifecycle for commercial weighing and measuring instruments. It enables equipment owners to register instruments and apply for verification/re-verification, enables Legal Metrology Officers (LMOs) and Government Approved Test Centres (GATCs) to schedule, inspect, and record metrological observations, and generates tamper-evident digital certificates embedded with verifiable QR codes and anti-tamper SHA-256 digests.
+
+**Master Documentation**: For the complete, authoritative knowledge base, consult the [Documentation Index](docs/DOCUMENTATION_INDEX.md).
 
 ---
 
-## 2. Key Lifecycle
+## 2. Core Legal Metrology Lifecycle
 
 ```text
 Instrument Owner / Business
@@ -20,143 +22,137 @@ Instrument Registration
         ↓
 Verification / Re-verification Application
         ↓
-Application Review
+Application Review (LMO / Admin)
         ↓
-Scheduling / Officer Allocation
+Scheduling & Verifier Allocation (LMO / GATC)
         ↓
-Inspection / Verification
+Field / Laboratory Inspection
         ↓
-Verification Result
+Observation Logging (Checklist Readings)
         ↓
-Digital Certificate Generation
+Verification Determination (VERIFIED / REJECTED)
         ↓
-QR-based Certificate Verification
+Digital Certificate Generation (PDF + SHA-256 Digest)
         ↓
-Certificate Validity / Expiry Tracking
+Public QR-based Certificate Verification
         ↓
-Re-verification
+Statutory Expiry Tracking (valid_until)
+        ↓
+Periodic Re-verification (New Application)
 ```
 
 ---
 
 ## 3. Technology Stack
 
-- **Backend**: Python 3, FastAPI, Pydantic, SQLAlchemy 2.x, Alembic, PostgreSQL, Pytest
-- **Frontend**: Next.js (App Router), TypeScript, Tailwind CSS, Redux Toolkit
-- **Certificates & QR**: ReportLab, Python `qrcode`
-- **Architecture**: Modular Monolith
+- **Backend**: Python 3.8+ (FastAPI, Pydantic v2, SQLAlchemy 2.x, Alembic, PostgreSQL, Pytest)
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS, Redux Toolkit, RTK Query
+- **Certificates & QR**: ReportLab PDF Engine, Python `qrcode`, SHA-256 integrity digest
+- **Architecture**: Software-Only Modular Monolith (Strictly No Docker, Kubernetes, Kafka, Redis, or AI/ML)
 
 ---
 
-## 4. Repository Structure
+## 4. Documentation Layers
 
-```text
-Metrix/
-├── .agents/
-│   └── rules/                  # Persistent AI agent and architectural rules
-├── AGENTS.md                   # AI Agent and developer guidelines
-├── README.md                   # Project documentation
-├── .gitignore                  # Git ignore definitions
-├── .env.example                # Safe environment configuration template
-├── backend/
-│   ├── app/
-│   │   ├── api/                # FastAPI routers (/api/v1)
-│   │   ├── core/               # Configuration, security, logging, dependencies
-│   │   ├── db/                 # SQLAlchemy database session & declarative base
-│   │   ├── models/             # SQLAlchemy ORM models
-│   │   ├── schemas/            # Pydantic validation schemas
-│   │   ├── repositories/       # Data persistence & query layer
-│   │   ├── services/           # Business logic & domain workflows
-│   │   ├── utils/              # Utility helpers
-│   │   └── main.py             # FastAPI entrypoint & middleware
-│   ├── alembic/                # Database migrations
-│   ├── tests/                  # Pytest test suite
-│   └── requirements.txt        # Python dependencies
-└── frontend/
-    ├── src/
-    │   ├── app/                # Next.js App Router pages and layouts
-    │   ├── components/         # Reusable UI, layout, and form components
-    │   ├── features/           # Feature-oriented modules
-    │   ├── services/           # Centralized API clients
-    │   ├── store/              # Redux Toolkit store & typed hooks
-    │   └── types/              # TypeScript definitions
-    ├── package.json            # Node.js dependencies & scripts
-    ├── tsconfig.json           # TypeScript configuration
-    └── tailwind.config.js      # Tailwind CSS configuration
-```
+METRIX documentation is organized into four distinct layers in `docs/`:
+1. **[Current-State Knowledge Base](docs/DOCUMENTATION_INDEX.md)** (`docs/00-...` through `docs/18-...`): The authoritative guide for what METRIX implements post-Phase 6.
+2. **[Decisions Log](docs/DOCUMENTATION_DECISIONS.md)**: Architectural and domain decisions log.
+3. **[Phase History](docs/phase-history/)**: Historical phase records (Phases 1 through 6).
+4. **Academic & Research** (`Documentation/Literature-Design-Mathology/`): College project report, proposal, literature survey, and LaTeX source files.
 
 ---
 
-## 5. Getting Started (Local Development)
+## 5. Getting Started (Local Setup)
 
 ### Prerequisites
 - Python 3.8+ (Python 3.10+ recommended)
-- Node.js 18+ (Node.js 20 recommended) & npm
-- PostgreSQL 14+ database instance
+- Node.js 18+ (Node.js 20 LTS recommended) & npm
+- PostgreSQL 14+ database service running locally on port 5432
 
-### Setup Workflow
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd Metrix
-   ```
+### 1. Configure Environment Variables
+Copy `.env.example` to `.env` in the project root:
+```bash
+cp .env.example .env
+```
+Ensure your PostgreSQL connection string (`DATABASE_URL`) and `SECRET_KEY` are configured in `.env`.
 
-2. **Configure Environment Variables**:
-   Copy `.env.example` to `.env` at the project root:
-   ```bash
-   cp .env.example .env
-   ```
-   > **Note**: `.env` contains private configuration and must NEVER be committed to version control. Open `.env` and configure your PostgreSQL connection string (`DATABASE_URL`) and application secrets.
-
-3. **Install Backend Dependencies & Run Migrations**:
-   ```bash
-   cd backend
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-
-   # Apply database migrations
-   alembic upgrade head
-   ```
-
-4. **Start Backend Server**:
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
-   - Swagger Documentation: `http://localhost:8000/docs`
-   - Health Check: `http://localhost:8000/api/v1/health`
-
-5. **Start Frontend Client**:
-   ```bash
-   cd ../frontend
-   npm install
-   npm run dev
-   ```
-   - Web Application: `http://localhost:3000`
-   - Authentication Page: `http://localhost:3000/login`
-
-### Core API Endpoints (Phase 2)
-- `GET  /api/v1/health`: System health and PostgreSQL connectivity status
-- `POST /api/v1/auth/register`: Register new user account and stakeholder profile
-- `POST /api/v1/auth/login`: Authenticate credentials and receive signed JWT
-- `GET  /api/v1/auth/me`: Retrieve current authenticated user profile
-- `POST /api/v1/instruments`: Register weighing/measuring instrument
-- `GET  /api/v1/instruments`: List instruments (scoped by user role)
-- `POST /api/v1/applications`: Submit verification/re-verification application
-- `GET  /api/v1/applications`: List applications (with optional status filter)
-- `PATCH /api/v1/applications/{id}/status`: Transition application status
-
-### Running Tests
-Execute the backend test suite:
+### 2. Backend Setup, Migrations & Seeding
 ```bash
 cd backend
-pytest -v
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Apply migrations
+alembic upgrade head
+
+# Seed standard demonstration accounts
+python seed.py
+```
+
+### 3. Frontend Setup
+In a separate terminal:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+- **Web Portal**: `http://localhost:3000`
+- **Sign In / Registration**: `http://localhost:3000/login`
+
+### 4. Start Backend Server
+```bash
+cd backend
+source .venv/bin/activate
+uvicorn app.main:app --reload --port 8000
+```
+- **API Swagger Documentation**: `http://localhost:8000/docs`
+- **System Health Check**: `http://localhost:8000/api/v1/health`
+
+---
+
+## 6. Seeded Demo Accounts
+
+| Role | Email Address | Password |
+| :--- | :--- | :--- |
+| **ADMIN** | `admin@metrix.gov.in` | `AdminPass123!` |
+| **LMO** | `lmo@metrix.gov.in` | `LmoPass123!` |
+| **GATC** | `gatc@testinglab.org` | `GatcPass123!` |
+| **INSTRUMENT_OWNER** | `owner@example.com` | `OwnerPass123!` |
+
+---
+
+## 7. Core REST API Summary
+
+- **Health & Auth**: `GET /api/v1/health`, `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`
+- **Instruments**: `POST|GET /api/v1/instruments`, `GET /api/v1/instruments/{id}`
+- **Applications**: `POST|GET /api/v1/applications`, `GET|PATCH /api/v1/applications/{id}/*`
+- **Inspections**: `POST /api/v1/applications/{id}/inspection`, `POST|GET /api/v1/inspections/{id}/observations`, `PATCH /api/v1/inspections/{id}/result`
+- **Certificates**: `POST /api/v1/applications/{id}/certificate`, `GET /api/v1/certificates/{id}`, `GET /api/v1/certificates/verify/{token}` (Public QR)
+- **Operations**: `GET /api/v1/dashboard/summary`, `GET|PATCH /api/v1/notifications/*`, `GET /api/v1/reports/*`
+
+See [docs/12-api-reference.md](docs/12-api-reference.md) for full endpoint specifications.
+
+---
+
+## 8. Running Automated Tests
+
+```bash
+# Backend Automated Pytest Suite (45 tests)
+cd backend
+.venv/bin/pytest -v
+
+# Frontend Type Safety & Build
+cd ../frontend
+npm run type-check
+npm run build
 ```
 
 ---
 
-## 6. Engineering Constraints
+## 9. Engineering Constraints & Rules
 
 - **Backend Python files**: Maximum **500 lines** per file.
 - **Frontend TypeScript/TSX files**: Maximum **300 lines** per file.
-- **Strictly No**: Docker, Kubernetes, Microservices, Kafka, Redis, Blockchain, or AI/ML components.
+- **Documentation files**: Target **≤300 lines** where practical.
+- **Strictly Prohibited**: Docker, Kubernetes, Microservices, Kafka, RabbitMQ, Redis, Blockchain, or AI/ML.
