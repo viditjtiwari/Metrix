@@ -1,0 +1,66 @@
+from fastapi import APIRouter, Depends, Response, status
+from sqlalchemy.orm import Session
+from app.core.dependencies import get_current_user, get_db
+from app.models.user import User
+from app.schemas.certificate import (
+    CertificateDetailResponse,
+    PublicCertificateVerificationResponse,
+)
+from app.services.certificate_service import certificate_service
+
+router = APIRouter(tags=["Digital Certificates"])
+
+
+@router.get(
+    "/certificates/{certificate_id}",
+    response_model=CertificateDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get Certificate Details",
+)
+def get_certificate(
+    certificate_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CertificateDetailResponse:
+    """Retrieve detailed verification certificate information for authorized stakeholders."""
+    return certificate_service.get_certificate(
+        db, certificate_id=certificate_id, current_user=current_user
+    )
+
+
+@router.get(
+    "/certificates/{certificate_id}/download",
+    status_code=status.HTTP_200_OK,
+    summary="Download Certificate PDF",
+)
+def download_certificate(
+    certificate_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    """Download the official ReportLab-rendered PDF certificate."""
+    pdf_bytes, filename = certificate_service.download_certificate(
+        db, certificate_id=certificate_id, current_user=current_user
+    )
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
+
+
+@router.get(
+    "/public/certificates/verify/{verification_token}",
+    response_model=PublicCertificateVerificationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Public QR Certificate Verification",
+)
+def verify_certificate_public(
+    verification_token: str,
+    db: Session = Depends(get_db),
+) -> PublicCertificateVerificationResponse:
+    """Public, unauthenticated verification endpoint called via QR code scan or portal lookup."""
+    return certificate_service.verify_public_token(db, token=verification_token)

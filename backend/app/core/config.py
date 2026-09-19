@@ -54,5 +54,10 @@ class Settings(BaseSettings):
             return [str(i) for i in v]
         return []
 
+    # Certificate & Public Verification Settings
+    CERTIFICATE_VALIDITY_DAYS: int = 365
+    PUBLIC_VERIFICATION_BASE_URL: str = "http://localhost:3000/verify"
+    CERTIFICATE_STORAGE_DIR: str = str(_BACKEND_DIR / "storage" / "certificates")
+
 
 settings = Settings()

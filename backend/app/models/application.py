@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.instrument import Instrument
     from app.models.inspection import Inspection
+    from app.models.certificate import Certificate
 
 
 class VerificationApplication(Base, TimestampMixin):
@@ -60,6 +61,12 @@ class VerificationApplication(Base, TimestampMixin):
     )
     inspection: Mapped[Optional[Inspection]] = relationship(
         "Inspection",
+        back_populates="application",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    certificate: Mapped[Optional[Certificate]] = relationship(
+        "Certificate",
         back_populates="application",
         uselist=False,
         cascade="all, delete-orphan",

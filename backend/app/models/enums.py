@@ -36,3 +36,10 @@ class InstrumentType(str, enum.Enum):
     FLOW_METER = "FLOW_METER"
     LENGTH_MEASURE = "LENGTH_MEASURE"
     OTHER = "OTHER"
+
+
+class CertificateStatus(str, enum.Enum):
+    """Legal certification validity lifecycle states."""
+    ACTIVE = "ACTIVE"
+    EXPIRED = "EXPIRED"
+

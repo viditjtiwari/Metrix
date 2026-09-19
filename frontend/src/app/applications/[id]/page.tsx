@@ -9,7 +9,9 @@ import {
   useStartInspectionMutation,
   useUpdateApplicationStatusMutation,
 } from "@/features/applications/applicationApi";
+import { useGetApplicationCertificateQuery } from "@/features/certificates/certificateApi";
 import { ApplicationStatusBadge } from "@/features/applications/ApplicationStatusBadge";
+import { ApplicationActionBar } from "@/features/applications/ApplicationActionBar";
 import { AssignModal } from "@/features/applications/AssignModal";
 import { AddObservationModal } from "@/features/applications/AddObservationModal";
 import { InspectionCard } from "@/features/applications/InspectionCard";
@@ -17,6 +19,8 @@ import { InspectionResultModal } from "@/features/applications/InspectionResultM
 import { ObservationsList } from "@/features/applications/ObservationsList";
 import { ScheduleModal } from "@/features/applications/ScheduleModal";
 import { StatusTimeline } from "@/features/applications/StatusTimeline";
+import { CertificateCard } from "@/features/certificates/CertificateCard";
+import { IssueCertificateModal } from "@/features/certificates/IssueCertificateModal";
 import { useAppSelector } from "@/store/hooks";
 
 export default function ApplicationDetailPage() {
@@ -28,6 +32,7 @@ export default function ApplicationDetailPage() {
   const [showAssign, setShowAssign] = useState(false);
   const [showAddObs, setShowAddObs] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [showIssueCert, setShowIssueCert] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const { data: app, isLoading, isError, refetch } = useGetApplicationQuery(applicationId, {
@@ -37,6 +42,11 @@ export default function ApplicationDetailPage() {
   const { data: inspection, refetch: refetchInspection } =
     useGetApplicationInspectionQuery(applicationId, {
       skip: !applicationId || !app?.status || app.status === "DRAFT" || app.status === "SUBMITTED",
+    });
+
+  const { data: certificate, refetch: refetchCert } =
+    useGetApplicationCertificateQuery(applicationId, {
+      skip: !applicationId || !app?.status || app.status !== "CERTIFICATE_ISSUED",
     });
 
   const [updateStatus, { isLoading: updatingStatus }] = useUpdateApplicationStatusMutation();
@@ -82,12 +92,11 @@ export default function ApplicationDetailPage() {
     return <div className="p-12 text-center text-xs text-rose-600">Application not found or access denied.</div>;
   }
 
-  const isOfficerOrAdmin = user?.role === "LMO" || user?.role === "ADMIN";
   const isAssignedVerifier = inspection?.assigned_to_id === user?.id || user?.role === "ADMIN" || user?.role === "LMO";
 
   return (
     <div className="space-y-6">
-      {/* Top Breadcrumb & Status */}
+      {/* Top Breadcrumb & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
         <div>
           <Link href="/applications" className="text-xs font-semibold text-emerald-600 hover:underline">
@@ -99,97 +108,21 @@ export default function ApplicationDetailPage() {
           </div>
         </div>
 
-        {/* Operational Actions */}
-        <div className="flex flex-wrap items-center gap-2">
-          {app.status === "SUBMITTED" && isOfficerOrAdmin && (
-            <>
-              <button
-                onClick={handleReview}
-                disabled={updatingStatus}
-                className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
-              >
-                Accept for Review
-              </button>
-              <button
-                onClick={handleRejectReview}
-                disabled={updatingStatus}
-                className="px-3.5 py-1.5 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50 text-xs font-medium transition"
-              >
-                Reject Application
-              </button>
-            </>
-          )}
-
-          {app.status === "UNDER_REVIEW" && isOfficerOrAdmin && (
-            <>
-              <button
-                onClick={() => setShowSchedule(true)}
-                className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition"
-              >
-                Schedule Inspection
-              </button>
-              <button
-                onClick={() => setShowAssign(true)}
-                className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-medium transition"
-              >
-                Assign Verifier
-              </button>
-              <button
-                onClick={handleRejectReview}
-                className="px-3.5 py-1.5 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50 text-xs font-medium transition"
-              >
-                Reject
-              </button>
-            </>
-          )}
-
-          {app.status === "SCHEDULED" && (
-            <>
-              {isAssignedVerifier && (
-                <button
-                  onClick={handleStartInspection}
-                  disabled={startingInspection}
-                  className="px-3.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition"
-                >
-                  Start Inspection
-                </button>
-              )}
-              {isOfficerOrAdmin && (
-                <>
-                  <button
-                    onClick={() => setShowSchedule(true)}
-                    className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-medium transition"
-                  >
-                    Reschedule
-                  </button>
-                  <button
-                    onClick={() => setShowAssign(true)}
-                    className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-medium transition"
-                  >
-                    Reassign
-                  </button>
-                </>
-              )}
-            </>
-          )}
-
-          {app.status === "INSPECTION_IN_PROGRESS" && isAssignedVerifier && (
-            <>
-              <button
-                onClick={() => setShowAddObs(true)}
-                className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
-              >
-                + Add Observation
-              </button>
-              <button
-                onClick={() => setShowResult(true)}
-                className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition"
-              >
-                Finalize Result
-              </button>
-            </>
-          )}
-        </div>
+        <ApplicationActionBar
+          app={app}
+          user={user}
+          isAssignedVerifier={isAssignedVerifier}
+          updatingStatus={updatingStatus}
+          startingInspection={startingInspection}
+          onReview={handleReview}
+          onRejectReview={handleRejectReview}
+          onOpenSchedule={() => setShowSchedule(true)}
+          onOpenAssign={() => setShowAssign(true)}
+          onStartInspection={handleStartInspection}
+          onOpenAddObs={() => setShowAddObs(true)}
+          onOpenResult={() => setShowResult(true)}
+          onOpenIssueCert={() => setShowIssueCert(true)}
+        />
       </div>
 
       {actionError && (
@@ -199,6 +132,11 @@ export default function ApplicationDetailPage() {
       {/* Main Grid: Details + Timeline */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          {/* Certificate Card when CERTIFICATE_ISSUED */}
+          {app.status === "CERTIFICATE_ISSUED" && certificate && (
+            <CertificateCard certificate={certificate} />
+          )}
+
           {/* Metadata */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs text-xs space-y-3">
             <h3 className="text-sm font-semibold text-slate-900 border-b border-slate-100 pb-2">Application Details</h3>
@@ -279,6 +217,18 @@ export default function ApplicationDetailPage() {
           applicationId={applicationId}
           onClose={() => setShowResult(false)}
           onSuccess={() => { refetch(); refetchInspection(); }}
+        />
+      )}
+
+      {showIssueCert && (
+        <IssueCertificateModal
+          applicationId={applicationId}
+          applicationNumber={app.application_number}
+          onClose={() => setShowIssueCert(false)}
+          onSuccess={() => {
+            refetch();
+            refetchCert();
+          }}
         />
       )}
     </div>

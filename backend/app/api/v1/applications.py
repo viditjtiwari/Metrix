@@ -11,12 +11,17 @@ from app.schemas.application import (
     ApplicationResponse,
     ApplicationStatusUpdate,
 )
+from app.schemas.certificate import (
+    CertificateDetailResponse,
+    CertificateIssueRequest,
+)
 from app.schemas.inspection import (
     AssignmentRequest,
     InspectionDetailResponse,
     ScheduleRequest,
 )
 from app.services.application_service import application_service
+from app.services.certificate_service import certificate_service
 from app.services.inspection_service import inspection_service
 
 router = APIRouter(prefix="/applications", tags=["Verification Applications"])
@@ -186,3 +191,43 @@ def get_application_inspection(
         application_id=application_id,
         current_user=current_user,
     )
+
+
+@router.post(
+    "/{application_id}/certificate",
+    response_model=CertificateDetailResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Issue Digital Certificate for Application",
+)
+def issue_certificate(
+    application_id: int,
+    issue_data: Optional[CertificateIssueRequest] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.LMO, UserRole.ADMIN)),
+) -> CertificateDetailResponse:
+    """Issue official verification certificate for an application in VERIFIED status."""
+    remarks = issue_data.remarks if issue_data else None
+    return certificate_service.issue_certificate(
+        db,
+        application_id=application_id,
+        current_user=current_user,
+        remarks=remarks,
+    )
+
+
+@router.get(
+    "/{application_id}/certificate",
+    response_model=CertificateDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get Application Certificate",
+)
+def get_application_certificate(
+    application_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CertificateDetailResponse:
+    """Retrieve digital certificate associated with this application."""
+    return certificate_service.get_certificate_by_application(
+        db, application_id=application_id, current_user=current_user
+    )
+

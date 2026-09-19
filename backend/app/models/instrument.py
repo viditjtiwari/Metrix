@@ -8,6 +8,7 @@ from app.models.enums import InstrumentType
 if TYPE_CHECKING:
     from app.models.user import User
     from app.models.application import VerificationApplication
+    from app.models.certificate import Certificate
 
 
 class Instrument(Base, TimestampMixin):
@@ -40,3 +41,7 @@ class Instrument(Base, TimestampMixin):
     applications: Mapped[List[VerificationApplication]] = relationship(
         "VerificationApplication", back_populates="instrument"
     )
+    certificates: Mapped[List[Certificate]] = relationship(
+        "Certificate", back_populates="instrument"
+    )
+

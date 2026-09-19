@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from app.api.v1.applications import router as applications_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.certificates import router as certificates_router
 from app.api.v1.health import router as health_router
 from app.api.v1.inspections import router as inspections_router
 from app.api.v1.instruments import router as instruments_router
@@ -14,3 +15,5 @@ api_router.include_router(auth_router)
 api_router.include_router(instruments_router)
 api_router.include_router(applications_router)
 api_router.include_router(inspections_router)
+api_router.include_router(certificates_router)
+

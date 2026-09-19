@@ -182,3 +182,54 @@ export interface InspectionResultUpdate {
   remarks?: string;
 }
 
+export type CertificateStatus = "ACTIVE" | "EXPIRED";
+
+export interface CertificateResponse {
+  id: number;
+  certificate_number: string;
+  application_id: number;
+  instrument_id: number;
+  issued_by_id: number;
+  issued_at: string;
+  valid_from: string;
+  valid_until: string;
+  status: CertificateStatus;
+  integrity_hash: string;
+  verification_token: string;
+  pdf_path?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CertificateDetailResponse extends CertificateResponse {
+  instrument_registration_number?: string | null;
+  instrument_type?: string | null;
+  manufacturer?: string | null;
+  model_name?: string | null;
+  serial_number?: string | null;
+  capacity?: string | null;
+  issued_by_name?: string | null;
+  application_number?: string | null;
+  verification_url?: string | null;
+}
+
+export interface PublicCertificateVerificationResponse {
+  certificate_number: string;
+  instrument_registration_number: string;
+  instrument_type: string;
+  manufacturer: string;
+  model: string;
+  serial_number?: string | null;
+  verification_result: string;
+  issued_at: string;
+  valid_from: string;
+  valid_until: string;
+  status: CertificateStatus;
+  integrity_hash: string;
+}
+
+export interface CertificateIssueRequest {
+  remarks?: string;
+}
+
+

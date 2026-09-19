@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from app.models.instrument import Instrument
     from app.models.application import VerificationApplication, ApplicationStatusHistory
     from app.models.inspection import Inspection
+    from app.models.certificate import Certificate
 
 
 class User(Base, TimestampMixin):
@@ -52,6 +53,11 @@ class User(Base, TimestampMixin):
     # Inspections assigned to this officer/verifier
     assigned_inspections: Mapped[List[Inspection]] = relationship(
         "Inspection", back_populates="assigned_to"
+    )
+
+    # Certificates issued by this officer/admin
+    issued_certificates: Mapped[List[Certificate]] = relationship(
+        "Certificate", back_populates="issued_by"
     )
 
 
