@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { StoreProvider } from "@/store/StoreProvider";
+import { HeaderNav } from "@/components/layout/HeaderNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,8 +30,11 @@ export default function RootLayout({
                   </span>
                 </div>
               </div>
-              <div className="text-xs text-slate-500 hidden sm:block">
-                Legal Metrology Verification Platform
+              <div className="flex items-center space-x-6">
+                <div className="text-xs text-slate-500 hidden md:block">
+                  Legal Metrology Verification Platform
+                </div>
+                <HeaderNav />
               </div>
             </div>
           </header>

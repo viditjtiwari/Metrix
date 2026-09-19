@@ -92,42 +92,65 @@ Metrix/
 ### Prerequisites
 - Python 3.8+ (Python 3.10+ recommended)
 - Node.js 18+ (Node.js 20 recommended) & npm
-- PostgreSQL 14+ running locally
+- PostgreSQL 14+ database instance
 
-### Environment Configuration
-Copy the safe `.env.example` to `.env` in both backend and frontend if needed:
-```bash
-cp .env.example backend/.env
-```
+### Setup Workflow
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd Metrix
+   ```
 
-### Backend Setup
-```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+2. **Configure Environment Variables**:
+   Copy `.env.example` to `.env` at the project root:
+   ```bash
+   cp .env.example .env
+   ```
+   > **Note**: `.env` contains private configuration and must NEVER be committed to version control. Open `.env` and configure your PostgreSQL connection string (`DATABASE_URL`) and application secrets.
 
-# Run migrations
-alembic upgrade head
+3. **Install Backend Dependencies & Run Migrations**:
+   ```bash
+   cd backend
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
 
-# Start backend server
-uvicorn app.main:app --reload --port 8000
-```
-- API Health Endpoint: `http://localhost:8000/api/v1/health`
-- Swagger Documentation: `http://localhost:8000/docs`
+   # Apply database migrations
+   alembic upgrade head
+   ```
 
-### Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
-- Web Application: `http://localhost:3000`
+4. **Start Backend Server**:
+   ```bash
+   uvicorn app.main:app --reload --port 8000
+   ```
+   - Swagger Documentation: `http://localhost:8000/docs`
+   - Health Check: `http://localhost:8000/api/v1/health`
+
+5. **Start Frontend Client**:
+   ```bash
+   cd ../frontend
+   npm install
+   npm run dev
+   ```
+   - Web Application: `http://localhost:3000`
+   - Authentication Page: `http://localhost:3000/login`
+
+### Core API Endpoints (Phase 2)
+- `GET  /api/v1/health`: System health and PostgreSQL connectivity status
+- `POST /api/v1/auth/register`: Register new user account and stakeholder profile
+- `POST /api/v1/auth/login`: Authenticate credentials and receive signed JWT
+- `GET  /api/v1/auth/me`: Retrieve current authenticated user profile
+- `POST /api/v1/instruments`: Register weighing/measuring instrument
+- `GET  /api/v1/instruments`: List instruments (scoped by user role)
+- `POST /api/v1/applications`: Submit verification/re-verification application
+- `GET  /api/v1/applications`: List applications (with optional status filter)
+- `PATCH /api/v1/applications/{id}/status`: Transition application status
 
 ### Running Tests
+Execute the backend test suite:
 ```bash
 cd backend
-pytest
+pytest -v
 ```
 
 ---

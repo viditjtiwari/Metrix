@@ -44,10 +44,8 @@ coverage.xml
 
 # Environment variables & secrets (NEVER commit secrets)
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
 # IDE & Editor files
 .vscode/

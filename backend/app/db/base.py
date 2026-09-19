@@ -21,3 +21,7 @@ class TimestampMixin:
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+
+
+# Import models here so Base.metadata is populated for Alembic
+import app.models  # noqa: F401, E402

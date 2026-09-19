@@ -1,0 +1,156 @@
+import { baseApi } from "@/services/api";
+import {
+  ApplicationDetailResponse,
+  ApplicationListResponse,
+  ApplicationStatus,
+  AssignmentRequest,
+  InspectionDetailResponse,
+  InspectionResultUpdate,
+  ObservationCreate,
+  ObservationResponse,
+  ScheduleRequest,
+  User,
+} from "@/types";
+
+export const applicationApi = baseApi.injectEndpoints({
+  endpoints: (builder) => ({
+    getApplications: builder.query<
+      ApplicationListResponse,
+      { status?: ApplicationStatus; page?: number; pageSize?: number } | void
+    >({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params?.status) queryParams.append("status", params.status);
+        if (params?.page) queryParams.append("page", params.page.toString());
+        if (params?.pageSize) queryParams.append("page_size", params.pageSize.toString());
+        const qs = queryParams.toString();
+        return `/applications${qs ? `?${qs}` : ""}`;
+      },
+      providesTags: ["Applications"],
+    }),
+
+    getApplication: builder.query<ApplicationDetailResponse, number>({
+      query: (id) => `/applications/${id}`,
+      providesTags: (_res, _err, id) => [{ type: "Applications", id }],
+    }),
+
+    updateApplicationStatus: builder.mutation<
+      ApplicationDetailResponse,
+      { id: number; status: ApplicationStatus; remarks?: string }
+    >({
+      query: ({ id, status, remarks }) => ({
+        url: `/applications/${id}/status`,
+        method: "PATCH",
+        body: { status, remarks },
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: "Applications", id },
+        "Applications",
+      ],
+    }),
+
+    scheduleInspection: builder.mutation<
+      InspectionDetailResponse,
+      { id: number; data: ScheduleRequest }
+    >({
+      query: ({ id, data }) => ({
+        url: `/applications/${id}/schedule`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: "Applications", id },
+        "Applications",
+        "Inspections",
+      ],
+    }),
+
+    assignVerifier: builder.mutation<
+      InspectionDetailResponse,
+      { id: number; data: AssignmentRequest }
+    >({
+      query: ({ id, data }) => ({
+        url: `/applications/${id}/assignment`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: "Applications", id },
+        "Applications",
+        "Inspections",
+      ],
+    }),
+
+    startInspection: builder.mutation<InspectionDetailResponse, number>({
+      query: (id) => ({
+        url: `/applications/${id}/inspection`,
+        method: "POST",
+      }),
+      invalidatesTags: (_res, _err, id) => [
+        { type: "Applications", id },
+        "Applications",
+        "Inspections",
+      ],
+    }),
+
+    getApplicationInspection: builder.query<InspectionDetailResponse, number>({
+      query: (id) => `/applications/${id}/inspection`,
+      providesTags: (_res, _err, id) => [{ type: "Inspections", id }],
+    }),
+
+    getVerifiers: builder.query<User[], void>({
+      query: () => `/inspections/verifiers`,
+    }),
+
+    addObservation: builder.mutation<
+      ObservationResponse,
+      { inspectionId: number; data: ObservationCreate; applicationId?: number }
+    >({
+      query: ({ inspectionId, data }) => ({
+        url: `/inspections/${inspectionId}/observations`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (_res, _err, { inspectionId, applicationId }) => [
+        { type: "Inspections", id: applicationId ?? inspectionId },
+        "Inspections",
+      ],
+    }),
+
+    getObservations: builder.query<ObservationResponse[], number>({
+      query: (inspectionId) => `/inspections/${inspectionId}/observations`,
+      providesTags: (_res, _err, id) => [{ type: "Inspections", id }],
+    }),
+
+    submitInspectionResult: builder.mutation<
+      InspectionDetailResponse,
+      { inspectionId: number; data: InspectionResultUpdate; applicationId?: number }
+    >({
+      query: ({ inspectionId, data }) => ({
+        url: `/inspections/${inspectionId}/result`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: (_res, _err, { inspectionId, applicationId }) => [
+        { type: "Applications", id: applicationId },
+        "Applications",
+        { type: "Inspections", id: inspectionId },
+        "Inspections",
+      ],
+    }),
+  }),
+});
+
+export const {
+  useGetApplicationsQuery,
+  useGetApplicationQuery,
+  useUpdateApplicationStatusMutation,
+  useScheduleInspectionMutation,
+  useAssignVerifierMutation,
+  useStartInspectionMutation,
+  useGetApplicationInspectionQuery,
+  useGetVerifiersQuery,
+  useAddObservationMutation,
+  useGetObservationsQuery,
+  useSubmitInspectionResultMutation,
+} = applicationApi;
