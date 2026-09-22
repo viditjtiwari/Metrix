@@ -21,7 +21,7 @@ class StakeholderProfileResponse(BaseModel):
 
     id: int
     user_id: int
-    business_name: str
+    business_name: Optional[str] = None
     trade_license_number: Optional[str] = None
     contact_phone: str
     address_line: str

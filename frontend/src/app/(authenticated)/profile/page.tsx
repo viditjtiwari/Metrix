@@ -61,10 +61,16 @@ export default function ProfilePage() {
       {/* Stakeholder Profile */}
       {user.profile && (
         <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h3 className="text-base font-bold text-slate-900 mb-4">Business Details</h3>
+          <h3 className="text-base font-bold text-slate-900 mb-4">
+            {user.role === "INSTRUMENT_OWNER" || user.role === "GATC" ? "Business Details" : "Contact & Office Details"}
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <InfoRow icon={<Building2 size={16} />} label="Business Name" value={user.profile.business_name} />
-            <InfoRow icon={<Shield size={16} />} label="Trade License" value={user.profile.trade_license_number || "—"} />
+            {(user.role === "INSTRUMENT_OWNER" || user.role === "GATC") && (
+              <>
+                <InfoRow icon={<Building2 size={16} />} label="Business Name" value={user.profile.business_name} />
+                <InfoRow icon={<Shield size={16} />} label="Trade License" value={user.profile.trade_license_number || "—"} />
+              </>
+            )}
             <InfoRow icon={<Phone size={16} />} label="Contact Phone" value={user.profile.contact_phone} />
             <InfoRow icon={<MapPin size={16} />} label="Address" value={user.profile.address_line} />
             <InfoRow icon={<MapPin size={16} />} label="City / State" value={`${user.profile.city}, ${user.profile.state}`} />

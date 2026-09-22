@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { useUpdateProfileMutation } from "@/features/auth/authApi";
 import { useAppDispatch } from "@/store/hooks";
@@ -17,12 +17,26 @@ interface EditProfileModalProps {
 export function EditProfileModal({ open, onClose, user, token }: EditProfileModalProps) {
   const dispatch = useAppDispatch();
   const [fullName, setFullName] = useState(user.full_name);
+  const [businessName, setBusinessName] = useState(user.profile?.business_name || "");
   const [phone, setPhone] = useState(user.profile?.contact_phone || "");
   const [address, setAddress] = useState(user.profile?.address_line || "");
   const [city, setCity] = useState(user.profile?.city || "");
   const [stateName, setStateName] = useState(user.profile?.state || "");
   const [pincode, setPincode] = useState(user.profile?.pincode || "");
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setFullName(user.full_name);
+      setBusinessName(user.profile?.business_name || "");
+      setPhone(user.profile?.contact_phone || "");
+      setAddress(user.profile?.address_line || "");
+      setCity(user.profile?.city || "");
+      setStateName(user.profile?.state || "");
+      setPincode(user.profile?.pincode || "");
+      setError(null);
+    }
+  }, [open, user]);
 
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
 
@@ -32,6 +46,7 @@ export function EditProfileModal({ open, onClose, user, token }: EditProfileModa
     try {
       const updatedUser = await updateProfile({
         full_name: fullName,
+        business_name: businessName || undefined,
         contact_phone: phone || undefined,
         address_line: address || undefined,
         city: city || undefined,
@@ -43,7 +58,12 @@ export function EditProfileModal({ open, onClose, user, token }: EditProfileModa
       }
       onClose();
     } catch (err: any) {
-      setError(err?.data?.detail || "Failed to update profile.");
+      const msg = Array.isArray(err?.data?.detail)
+        ? err.data.detail.map((d: any) => d.msg).join(", ")
+        : typeof err?.data?.detail === "string"
+        ? err.data.detail
+        : "Failed to update profile.";
+      setError(msg);
     }
   };
 
@@ -63,6 +83,17 @@ export function EditProfileModal({ open, onClose, user, token }: EditProfileModa
             className="w-full h-9 px-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
           />
         </div>
+        {(user.role === "INSTRUMENT_OWNER" || user.role === "GATC") && (
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Business Name</label>
+            <input
+              type="text"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              className="w-full h-9 px-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            />
+          </div>
+        )}
         <div>
           <label className="block font-medium text-slate-700 mb-1">Contact Phone</label>
           <input

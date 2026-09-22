@@ -149,7 +149,21 @@ class UserRepository:
         if not user:
             return None
         if not user.profile:
-            profile = StakeholderProfile(user_id=user_id, **profile_dict)
+            business_name = (
+                profile_dict.get("business_name")
+                or user.full_name
+                or "N/A"
+            )
+            profile = StakeholderProfile(
+                user_id=user_id,
+                business_name=business_name.strip() if isinstance(business_name, str) else str(business_name),
+                trade_license_number=profile_dict.get("trade_license_number"),
+                contact_phone=profile_dict.get("contact_phone", "").strip(),
+                address_line=profile_dict.get("address_line", "").strip(),
+                city=profile_dict.get("city", "").strip(),
+                state=profile_dict.get("state", "").strip(),
+                pincode=profile_dict.get("pincode", "").strip(),
+            )
             db.add(profile)
         else:
             profile = user.profile
