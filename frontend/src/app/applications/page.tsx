@@ -4,13 +4,17 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useGetApplicationsQuery } from "@/features/applications/applicationApi";
 import { ApplicationStatusBadge } from "@/features/applications/ApplicationStatusBadge";
+import { ApplicationsPulseRail } from "@/features/applications/ApplicationsPulseRail";
 import { RegisterInstrumentModal } from "@/features/instruments/RegisterInstrumentModal";
 import { CreateApplicationModal } from "@/features/applications/CreateApplicationModal";
-import { useAppSelector } from "@/store/hooks";
-import { ApplicationStatus } from "@/types";
+import { ApplicationResponse, ApplicationStatus } from "@/types";
+import { AuthGuard } from "@/components/auth/AuthGuard";
+import { Button } from "@/components/ui/Button";
+import { DataTable } from "@/components/ui/DataTable";
 
 const statusFilters: { label: string; value?: ApplicationStatus }[] = [
   { label: "All" },
+  { label: "Draft", value: "DRAFT" },
   { label: "Submitted", value: "SUBMITTED" },
   { label: "Under Review", value: "UNDER_REVIEW" },
   { label: "Scheduled", value: "SCHEDULED" },
@@ -20,8 +24,9 @@ const statusFilters: { label: string; value?: ApplicationStatus }[] = [
 ];
 
 export default function ApplicationsListPage() {
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [selectedStatus, setSelectedStatus] = useState<ApplicationStatus | undefined>();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [preselectedInstId, setPreselectedInstId] = useState<number | undefined>();
@@ -29,197 +34,211 @@ export default function ApplicationsListPage() {
 
   const { data, isLoading, isError, refetch } = useGetApplicationsQuery({
     status: selectedStatus,
-    page: 1,
-    pageSize: 50,
+    page,
+    pageSize: 20,
   });
 
-  if (!isAuthenticated) {
+  const filteredItems = (data?.items || []).filter((app) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-xs">
-        <h2 className="text-base font-semibold text-slate-900">Sign In Required</h2>
-        <p className="mt-1 text-xs text-slate-500">
-          Please sign in to view and manage verification applications.
-        </p>
-        <Link
-          href="/login"
-          className="mt-4 inline-block px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition"
-        >
-          Go to Sign In
-        </Link>
-      </div>
+      app.application_number.toLowerCase().includes(q) ||
+      String(app.instrument_id).includes(q)
     );
-  }
+  });
+
+  const columns = [
+    {
+      key: "application_number",
+      header: "Application No.",
+      render: (row: ApplicationResponse) => (
+        <span className="font-mono font-bold text-on-surface">
+          {row.application_number}
+        </span>
+      ),
+    },
+    {
+      key: "instrument_id",
+      header: "Instrument",
+      render: (row: ApplicationResponse) => (
+        <span className="font-mono text-secondary">
+          INST-#{row.instrument_id}
+        </span>
+      ),
+    },
+    {
+      key: "application_type",
+      header: "Category",
+      render: (row: ApplicationResponse) => (
+        <span className="inline-flex px-2 py-0.5 rounded bg-surface-container text-on-surface text-[10px] font-semibold">
+          {row.application_type}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Workflow Status",
+      render: (row: ApplicationResponse) => (
+        <ApplicationStatusBadge status={row.status} />
+      ),
+    },
+    {
+      key: "submitted_at",
+      header: "Submission Date",
+      render: (row: ApplicationResponse) => (
+        <span className="text-on-surface-variant text-[11px]">
+          {row.submitted_at
+            ? new Date(row.submitted_at).toLocaleDateString()
+            : "Draft"}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Action",
+      className: "text-right",
+      render: (row: ApplicationResponse) => (
+        <Link
+          href={`/applications/${row.id}`}
+          className="inline-flex items-center gap-1 font-semibold text-secondary hover:text-secondary-container transition"
+        >
+          <span>Inspect</span>
+          <span className="material-symbols-outlined text-sm">chevron_right</span>
+        </Link>
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
-            Verification Applications
-          </h1>
-          <p className="mt-1 text-xs text-slate-500">
-            {user?.role === "INSTRUMENT_OWNER"
-              ? "Track your submitted legal metrology verification applications."
-              : "Review, schedule, and execute operational verifications."}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {(user?.role === "INSTRUMENT_OWNER" || user?.role === "ADMIN") && (
-            <>
-              <button
-                onClick={() => {
-                  setBannerMessage(null);
-                  setShowRegisterModal(true);
-                }}
-                className="px-3.5 py-1.5 rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50 text-xs font-semibold transition"
-              >
-                + Register Instrument
-              </button>
-              <button
-                onClick={() => {
-                  setBannerMessage(null);
-                  setPreselectedInstId(undefined);
-                  setShowCreateModal(true);
-                }}
-                className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition shadow-xs"
-              >
-                + New Application
-              </button>
-            </>
-          )}
-          <button
-            onClick={() => refetch()}
-            className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs hover:bg-slate-50 transition"
-          >
-            Refresh
-          </button>
-        </div>
-      </div>
+    <AuthGuard>
+      <div className="space-y-6 animate-fade-in">
+        <ApplicationsPulseRail />
 
-      {bannerMessage && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-800 flex items-center justify-between shadow-xs">
-          <span>{bannerMessage}</span>
-          <button
-            onClick={() => setBannerMessage(null)}
-            className="text-emerald-600 hover:text-emerald-900 font-bold ml-4"
-          >
-            ×
-          </button>
-        </div>
-      )}
+        {/* Action Bar & Search */}
+        <div className="bg-surface-container-lowest p-4 rounded-xl border border-surface-variant/50 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex-1 flex items-center gap-2">
+            <div className="relative flex-1">
+              <span className="material-symbols-outlined absolute left-3 top-2.5 text-outline text-lg">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by Application Number (APP-...) or Instrument ID..."
+                className="w-full pl-9 pr-3 py-1.5 bg-surface-container-low rounded-lg text-xs text-on-surface placeholder:text-outline focus:outline-hidden focus:bg-surface-container-lowest border border-transparent focus:border-secondary transition"
+              />
+            </div>
+          </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-        {statusFilters.map((tab) => {
-          const isActive = selectedStatus === tab.value;
-          return (
-            <button
-              key={tab.label}
-              onClick={() => setSelectedStatus(tab.value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition ${
-                isActive
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-              }`}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setBannerMessage(null);
+                setShowRegisterModal(true);
+              }}
             >
-              {tab.label}
+              <span className="material-symbols-outlined text-base">add</span>
+              <span>Register Instrument</span>
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setBannerMessage(null);
+                setPreselectedInstId(undefined);
+                setShowCreateModal(true);
+              }}
+            >
+              <span className="material-symbols-outlined text-base">add_circle</span>
+              <span>+ New Application</span>
+            </Button>
+            <button
+              onClick={() => refetch()}
+              className="p-1.5 rounded-lg border border-surface-variant text-outline hover:text-on-surface transition"
+              title="Refresh"
+            >
+              <span className="material-symbols-outlined text-lg">refresh</span>
             </button>
-          );
-        })}
-      </div>
+          </div>
+        </div>
 
-      {/* Applications Table / Cards */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center p-12 text-xs text-slate-500">
-            <div className="h-4 w-4 rounded-full border-2 border-slate-300 border-t-emerald-600 animate-spin mr-2" />
-            Loading verification applications...
-          </div>
-        ) : isError ? (
-          <div className="p-8 text-center text-xs text-rose-600">
-            Failed to load applications. Please try refreshing.
-          </div>
-        ) : !data || data.items.length === 0 ? (
-          <div className="p-12 text-center text-xs text-slate-400">
-            No applications found matching the selected criteria.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/50 text-slate-500 font-medium">
-                  <th className="py-3 px-4">Application #</th>
-                  <th className="py-3 px-4">Instrument ID</th>
-                  <th className="py-3 px-4">Type</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Submitted At</th>
-                  <th className="py-3 px-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {data.items.map((app) => (
-                  <tr key={app.id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-3 px-4 font-mono font-semibold text-slate-900">
-                      {app.application_number}
-                    </td>
-                    <td className="py-3 px-4 text-slate-600 font-mono">
-                      INST-#{app.instrument_id}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="inline-flex px-2 py-0.5 rounded-sm bg-slate-100 text-slate-700 text-[11px] font-medium">
-                        {app.application_type}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <ApplicationStatusBadge status={app.status} />
-                    </td>
-                    <td className="py-3 px-4 text-slate-500">
-                      {app.submitted_at
-                        ? new Date(app.submitted_at).toLocaleDateString()
-                        : "Draft"}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <Link
-                        href={`/applications/${app.id}`}
-                        className="inline-flex items-center font-semibold text-emerald-600 hover:text-emerald-700 transition"
-                      >
-                        View Details →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {bannerMessage && (
+          <div className="rounded-xl border border-tertiary/30 bg-tertiary-container/10 p-3 text-xs text-tertiary font-medium flex items-center justify-between shadow-xs">
+            <span>{bannerMessage}</span>
+            <button onClick={() => setBannerMessage(null)} className="font-bold ml-4">
+              ×
+            </button>
           </div>
         )}
+
+        {/* Regulatory Status Filter Navigation Tabs */}
+        <div className="bg-surface-container-lowest p-1 rounded-xl border border-surface-variant/40 shadow-xs flex items-center gap-1 overflow-x-auto text-xs">
+          {statusFilters.map((tab) => {
+            const isActive = selectedStatus === tab.value;
+            return (
+              <button
+                key={tab.label}
+                onClick={() => {
+                  setSelectedStatus(tab.value);
+                  setPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition flex items-center gap-1.5 ${
+                  isActive
+                    ? "bg-primary-container text-on-secondary shadow-xs font-bold"
+                    : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
+                }`}
+              >
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Applications Data Table */}
+        <DataTable
+          columns={columns}
+          data={filteredItems}
+          keyExtractor={(app) => app.id}
+          isLoading={isLoading}
+          emptyTitle="No verification applications found"
+          emptyDescription="There are no applications matching your current filter criteria."
+          pagination={{
+            page,
+            pageSize: 20,
+            total: data?.total || 0,
+            onPageChange: setPage,
+          }}
+        />
+
+        {showRegisterModal && (
+          <RegisterInstrumentModal
+            onClose={() => setShowRegisterModal(false)}
+            onSuccess={(inst) => {
+              setBannerMessage(
+                `Instrument registered successfully! Reg Number: ${inst.registration_number}`
+              );
+              setPreselectedInstId(inst.id);
+              setShowCreateModal(true);
+            }}
+          />
+        )}
+
+        {showCreateModal && (
+          <CreateApplicationModal
+            preselectedInstrumentId={preselectedInstId}
+            onClose={() => setShowCreateModal(false)}
+            onSuccess={(newApp) => {
+              setBannerMessage(
+                `Application created! Number: ${newApp.application_number} (${newApp.status})`
+              );
+              refetch();
+            }}
+          />
+        )}
       </div>
-
-      {showRegisterModal && (
-        <RegisterInstrumentModal
-          onClose={() => setShowRegisterModal(false)}
-          onSuccess={(inst) => {
-            setBannerMessage(
-              `Instrument registered successfully! Reg Number: ${inst.registration_number}`
-            );
-            setPreselectedInstId(inst.id);
-            setShowCreateModal(true);
-          }}
-        />
-      )}
-
-      {showCreateModal && (
-        <CreateApplicationModal
-          preselectedInstrumentId={preselectedInstId}
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={(newApp) => {
-            setBannerMessage(
-              `Application created successfully! Application Number: ${newApp.application_number} (${newApp.status})`
-            );
-            refetch();
-          }}
-        />
-      )}
-    </div>
+    </AuthGuard>
   );
 }

@@ -6,6 +6,8 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logout } from "@/features/auth/authSlice";
 import { LoginForm } from "@/features/auth/LoginForm";
 import { RegisterForm } from "@/features/auth/RegisterForm";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,7 +17,7 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
-  const handleRegisterSuccess = (_registeredEmail: string) => {
+  const handleRegisterSuccess = () => {
     router.push("/dashboard");
   };
 
@@ -24,58 +26,74 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto my-8">
+    <div className="max-w-md mx-auto my-8 animate-fade-in">
       {isAuthenticated && user ? (
-        <div className="bg-white p-6 sm:p-8 rounded-xl border border-slate-200 shadow-sm text-center space-y-4">
-          <div className="h-16 w-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
-            {user.full_name.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">{user.full_name}</h2>
-            <p className="text-xs text-slate-500">{user.email}</p>
-            <span className="inline-block mt-2 px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-              Role: {user.role}
-            </span>
-          </div>
-
-          {user.profile && (
-            <div className="text-left bg-slate-50 p-4 rounded-lg border border-slate-200 text-xs space-y-1">
-              <div className="font-semibold text-slate-800">
-                {user.profile.business_name}
-              </div>
-              <div className="text-slate-600">
-                {user.profile.city}, {user.profile.state} - {user.profile.pincode}
-              </div>
-              <div className="text-slate-500">Phone: {user.profile.contact_phone}</div>
+        <Card>
+          <div className="text-center space-y-4">
+            <div className="h-16 w-16 bg-tertiary/10 text-tertiary rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+              {user.full_name.charAt(0).toUpperCase()}
             </div>
-          )}
+            <div>
+              <h2 className="text-xl font-headline font-bold text-on-surface">
+                {user.full_name}
+              </h2>
+              <p className="text-xs text-on-surface-variant">{user.email}</p>
+              <span className="inline-block mt-2 px-2.5 py-1 text-xs font-semibold rounded-full bg-tertiary/10 text-tertiary border border-tertiary/20">
+                Role: {user.role}
+              </span>
+            </div>
 
-          <div className="pt-2 flex space-x-3">
-            <button
-              onClick={() => router.push("/")}
-              className="flex-1 py-2 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition"
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => dispatch(logout())}
-              className="flex-1 py-2 px-4 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium transition"
-            >
-              Sign Out
-            </button>
+            {user.profile && (
+              <div className="text-left bg-surface-container-low p-4 rounded-lg border border-surface-variant/40 text-xs space-y-1">
+                <div className="font-semibold text-on-surface">
+                  {user.profile.business_name}
+                </div>
+                <div className="text-on-surface-variant">
+                  {user.profile.city}, {user.profile.state} -{" "}
+                  {user.profile.pincode}
+                </div>
+                <div className="text-outline">
+                  Phone: {user.profile.contact_phone}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2 flex gap-3">
+              <Button
+                variant="primary"
+                className="flex-1"
+                onClick={() => router.push("/dashboard")}
+              >
+                Dashboard
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => dispatch(logout())}
+              >
+                Sign Out
+              </Button>
+            </div>
           </div>
-        </div>
+        </Card>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <Card padding="lg">
           {/* Header */}
-          <div className="p-6 border-b border-slate-100 text-center">
-            <h1 className="text-xl font-bold text-slate-900">METRIX Authentication</h1>
-            <p className="text-xs text-slate-500 mt-1">
+          <div className="border-b border-surface-variant/40 pb-5 text-center">
+            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mx-auto mb-3">
+              <span className="material-symbols-outlined text-2xl text-on-primary">
+                balance
+              </span>
+            </div>
+            <h1 className="text-xl font-headline font-bold text-on-surface">
+              METRIX Authentication
+            </h1>
+            <p className="text-xs text-on-surface-variant mt-1">
               Access the legal metrology verification portal
             </p>
 
             {/* Tab switch */}
-            <div className="mt-6 flex rounded-lg bg-slate-100 p-1">
+            <div className="mt-5 flex rounded-lg bg-surface-container-low p-1">
               <button
                 type="button"
                 onClick={() => {
@@ -84,8 +102,8 @@ export default function LoginPage() {
                 }}
                 className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition ${
                   activeTab === "login"
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-surface-container-lowest text-on-surface shadow-sm"
+                    : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 Sign In
@@ -98,8 +116,8 @@ export default function LoginPage() {
                 }}
                 className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition ${
                   activeTab === "register"
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-surface-container-lowest text-on-surface shadow-sm"
+                    : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 Register
@@ -107,9 +125,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="pt-5">
             {successNotice && (
-              <div className="mb-4 p-3 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg">
+              <div className="mb-4 p-3 text-xs text-tertiary bg-tertiary/5 border border-tertiary/20 rounded-lg">
                 {successNotice}
               </div>
             )}
@@ -120,7 +138,7 @@ export default function LoginPage() {
               <RegisterForm onSuccess={handleRegisterSuccess} />
             )}
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

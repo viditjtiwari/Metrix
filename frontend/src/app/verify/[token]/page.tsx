@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { PublicCertificateVerificationResponse } from "@/types";
+import { VerificationResultCard } from "@/components/public/VerificationResultCard";
+import { Button } from "@/components/ui/Button";
 
 export default function PublicVerifyPage() {
   const params = useParams();
@@ -40,157 +42,84 @@ export default function PublicVerifyPage() {
     fetchVerification();
   }, [token]);
 
-  const isExpired = cert?.status === "EXPIRED";
-
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 flex flex-col items-center">
+    <div className="py-6 flex flex-col items-center max-w-4xl mx-auto space-y-6 animate-fade-in">
       {/* Header Emblem */}
-      <div className="w-full max-w-xl text-center mb-8">
-        <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-emerald-600 text-white font-bold text-xl shadow-md mb-3">
-          M
+      <div className="w-full text-center">
+        <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary text-on-primary font-bold text-xl shadow-md mb-3">
+          <span className="material-symbols-outlined text-2xl">balance</span>
         </div>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">METRIX Public Registry</h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Government Legal Metrology Instrument Verification System
+        <h1 className="text-xl font-bold tracking-tight text-on-surface">
+          METRIX Public Verification Registry
+        </h1>
+        <p className="text-xs text-on-surface-variant mt-1">
+          Directorate of Legal Metrology • Anti-Tamper Digital Certification
         </p>
       </div>
 
-      <div className="w-full max-w-xl bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 text-xs">
-        {loading ? (
-          <div className="py-16 text-center space-y-3">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-3 border-emerald-600 border-t-transparent"></div>
-            <p className="text-xs text-slate-500 font-medium">Verifying certificate authenticity...</p>
-          </div>
-        ) : error ? (
-          <div className="py-8 text-center space-y-4">
-            <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-rose-100 text-rose-600 text-2xl font-bold">
-              ✕
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Certificate Verification Failed</h2>
-              <p className="text-xs text-rose-600 mt-1">{error}</p>
-            </div>
-            <p className="text-[11px] text-slate-400 max-w-md mx-auto">
-              Please inspect the QR code or link you received. Ensure the URL has not been tampered with or truncated.
-            </p>
-          </div>
-        ) : cert ? (
-          <div className="space-y-6">
-            {/* Status Banner */}
-            <div
-              className={`p-4 rounded-xl border flex items-center gap-3 ${
-                isExpired
-                  ? "bg-amber-50 border-amber-200 text-amber-900"
-                  : "bg-emerald-50 border-emerald-200 text-emerald-950"
-              }`}
-            >
-              <div
-                className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-lg shrink-0 ${
-                  isExpired ? "bg-amber-500 text-white" : "bg-emerald-600 text-white"
-                }`}
-              >
-                {isExpired ? "!" : "✓"}
-              </div>
-              <div>
-                <h2 className="text-sm font-bold">
-                  {isExpired ? "Certificate Expired" : "Authentic Certificate Verified"}
-                </h2>
-                <p className="text-[11px] opacity-80 mt-0.5">
-                  {isExpired
-                    ? `Validity expired on ${cert.valid_until}. Instrument requires statutory re-verification.`
-                    : "This instrument is currently active and certified under the Legal Metrology Act."}
-                </p>
-              </div>
-            </div>
-
-            {/* Certificate Header Info */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-              <div>
-                <span className="text-slate-400 block text-[11px]">Certificate Number</span>
-                <span className="font-mono font-bold text-sm text-slate-900">{cert.certificate_number}</span>
-              </div>
-              <div>
-                <span
-                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
-                    isExpired
-                      ? "bg-amber-100 text-amber-800 border-amber-300"
-                      : "bg-emerald-100 text-emerald-800 border-emerald-300"
-                  }`}
-                >
-                  ● {cert.status}
-                </span>
-              </div>
-            </div>
-
-            {/* Instrument Particulars */}
-            <div>
-              <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">
-                Instrument Details
-              </h3>
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Registration No.</span>
-                  <span className="font-semibold text-slate-800 font-mono">{cert.instrument_registration_number}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Instrument Type</span>
-                  <span className="font-semibold text-slate-800">{cert.instrument_type}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Manufacturer</span>
-                  <span className="font-semibold text-slate-800">{cert.manufacturer}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Model / Serial</span>
-                  <span className="font-semibold text-slate-800 font-mono">
-                    {cert.model} {cert.serial_number ? `(${cert.serial_number})` : ""}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Statutory Validity Dates */}
-            <div>
-              <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">
-                Statutory Validity
-              </h3>
-              <div className="grid grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Issue Date</span>
-                  <span className="font-medium text-slate-800">{new Date(cert.issued_at).toLocaleDateString()}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Valid From</span>
-                  <span className="font-medium text-slate-800">{cert.valid_from}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Valid Until</span>
-                  <span className={`font-semibold ${isExpired ? "text-rose-600" : "text-emerald-700"}`}>
-                    {cert.valid_until}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Anti-Tamper Integrity Box */}
-            <div className="bg-slate-900 text-slate-200 p-3.5 rounded-xl space-y-1">
-              <span className="text-[10px] text-slate-400 font-mono block">
-                SHA-256 INTEGRITY HASH (TAMPER-EVIDENT RECORD)
-              </span>
-              <p className="font-mono text-[10px] text-emerald-400 break-all leading-tight">
-                {cert.integrity_hash}
-              </p>
-            </div>
-          </div>
-        ) : null}
-
-        <div className="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-          <span>Official METRIX SIH26036 Portal</span>
-          <Link href="/login" className="text-emerald-600 hover:underline font-medium">
-            Authorized Sign In →
-          </Link>
+      {loading ? (
+        <div className="w-full max-w-xl bg-surface-container-lowest rounded-2xl border border-surface-variant/40 p-12 text-center space-y-3 shadow-sm">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-3 border-tertiary border-t-transparent" />
+          <p className="text-xs text-on-surface-variant font-medium">
+            Verifying certificate authenticity against statutory ledger...
+          </p>
         </div>
-      </div>
+      ) : error ? (
+        <div className="w-full max-w-xl bg-surface-container-lowest rounded-2xl border border-surface-variant/40 p-8 text-center space-y-4 shadow-sm">
+          <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-error-container text-on-error-container text-2xl font-bold">
+            <span className="material-symbols-outlined text-3xl text-error">gpp_bad</span>
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-on-surface">
+              Certificate Verification Failed
+            </h2>
+            <p className="text-xs text-error mt-1">{error}</p>
+          </div>
+          <p className="text-[11px] text-outline max-w-md mx-auto">
+            Please verify the token or scan the official QR code again. If this
+            instrument was recently verified, allow a few moments for ledger
+            synchronization.
+          </p>
+          <div className="pt-2">
+            <Link href="/verify">
+              <Button variant="outline" size="sm">
+                Return to Verifier Search
+              </Button>
+            </Link>
+          </div>
+        </div>
+      ) : cert ? (
+        <div className="w-full space-y-4">
+          <VerificationResultCard
+            data={{
+              certificate_number: cert.certificate_number,
+              instrument_registration_number: cert.instrument_registration_number,
+              instrument_type: cert.instrument_type,
+              manufacturer: cert.manufacturer,
+              model: cert.model,
+              serial_number: cert.serial_number,
+              verification_result: cert.verification_result,
+              issued_at: cert.issued_at,
+              valid_from: cert.valid_from,
+              valid_until: cert.valid_until,
+              status: cert.status,
+              integrity_hash: cert.integrity_hash,
+            }}
+          />
+
+          <div className="flex items-center justify-between text-xs text-on-surface-variant px-2">
+            <Link
+              href="/verify"
+              className="text-secondary hover:underline font-semibold flex items-center gap-1"
+            >
+              <span>← Verify Another Instrument</span>
+            </Link>
+            <span className="font-mono text-[11px] text-outline">
+              Ledger Anchor: SHA-256 Validated
+            </span>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

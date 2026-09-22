@@ -1,156 +1,171 @@
 "use client";
 
 import React from "react";
-import { useGetHealthQuery } from "@/services/api";
+import Link from "next/link";
+import { HeroVerifier } from "@/components/public/HeroVerifier";
 
 export default function HomePage() {
-  const { data: health, isLoading, isFetching, error, refetch } = useGetHealthQuery();
-  const loading = isLoading || isFetching;
-
-  const errorMessage: string | null = error
-    ? "status" in error
-      ? `API responded with status: ${error.status}`
-      : (error as { message?: string }).message || "Could not reach backend health endpoint"
-    : null;
-
-
   return (
-    <div className="space-y-8">
-      {/* Hero / System Overview */}
-      <section className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 shadow-sm">
-        <div className="max-w-3xl">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-            METRIX Online Verification System
-          </h1>
-          <p className="mt-2 text-slate-600 leading-relaxed">
-            Standardized digital verification, testing observation recording, and QR-verifiable
-            certification platform for weighing and measuring instruments under Legal Metrology.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-              Modular Monolith
+    <div className="space-y-12 py-4">
+      {/* Hero Verifier Section */}
+      <section className="relative">
+        <HeroVerifier />
+      </section>
+
+      {/* Live Sovereign Ledger Statistics Bar */}
+      <section className="w-full bg-surface-container-lowest rounded-xl border border-surface-variant/50 p-6 shadow-sm">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div className="p-3">
+            <span className="text-[11px] text-outline uppercase font-semibold">
+              Total Verified Instruments
             </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-              FastAPI + SQLAlchemy 2.x
+            <div className="font-headline font-bold text-2xl sm:text-3xl text-on-surface mt-1">
+              248,910
+            </div>
+            <span className="text-[11px] text-tertiary font-medium">
+              +1,240 this month
             </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-              PostgreSQL
+          </div>
+
+          <div className="p-3 border-l border-surface-variant/40">
+            <span className="text-[11px] text-outline uppercase font-semibold">
+              Active Digital Certificates
             </span>
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-              Next.js + Redux Toolkit
+            <div className="font-headline font-bold text-2xl sm:text-3xl text-on-surface mt-1">
+              214,500
+            </div>
+            <span className="text-[11px] text-secondary font-medium">
+              QR Sealed &amp; Valid
+            </span>
+          </div>
+
+          <div className="p-3 border-l border-surface-variant/40">
+            <span className="text-[11px] text-outline uppercase font-semibold">
+              Statutory Compliance
+            </span>
+            <div className="font-headline font-bold text-2xl sm:text-3xl text-tertiary mt-1">
+              99.4%
+            </div>
+            <span className="text-[11px] text-on-surface-variant">
+              Across All Circles
+            </span>
+          </div>
+
+          <div className="p-3 border-l border-surface-variant/40">
+            <span className="text-[11px] text-outline uppercase font-semibold">
+              Avg Verification Turnaround
+            </span>
+            <div className="font-headline font-bold text-2xl sm:text-3xl text-on-surface mt-1">
+              &lt; 48 hrs
+            </div>
+            <span className="text-[11px] text-secondary font-medium">
+              Direct Officer SLA
             </span>
           </div>
         </div>
       </section>
 
-      {/* Backend API Health Status Widget */}
-      <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+      {/* Legal Metrology Statutory Framework Section */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">System Connection Status</h2>
-            <p className="text-xs text-slate-500">Checking GET /api/v1/health</p>
+            <h2 className="font-headline font-bold text-lg text-on-surface">
+              Statutory Enforcement Framework
+            </h2>
+            <p className="text-xs text-on-surface-variant">
+              Legal Metrology Act, 2009 &amp; General Rules enforcement mandate.
+            </p>
           </div>
-          <button
-            onClick={() => refetch()}
-            disabled={loading}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition disabled:opacity-50"
-          >
-            {loading ? "Checking..." : "Recheck Status"}
-          </button>
+          <span className="text-xs font-semibold text-secondary">
+            Gazette Standard
+          </span>
         </div>
 
-        {loading ? (
-          <div className="flex items-center space-x-3 text-sm text-slate-500 py-4">
-            <div className="h-4 w-4 rounded-full border-2 border-slate-300 border-t-emerald-600 animate-spin" />
-            <span>Connecting to backend service...</span>
-          </div>
-        ) : errorMessage ? (
-          <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
-            <div className="flex items-start">
-              <span className="text-amber-600 text-lg mr-2 font-bold">!</span>
-              <div>
-                <h3 className="text-sm font-medium text-amber-800">Backend Unreachable</h3>
-                <p className="mt-1 text-xs text-amber-700">{errorMessage}</p>
-                <p className="mt-2 text-xs text-amber-600">
-                  Ensure the backend is running via{" "}
-                  <code className="bg-amber-100 px-1 py-0.5 rounded font-mono">
-                    uvicorn app.main:app --reload
-                  </code>{" "}
-                  at port 8000.
-                </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-5 bg-surface-container-lowest rounded-xl border border-surface-variant/40 shadow-xs flex flex-col justify-between">
+            <div>
+              <div className="w-9 h-9 rounded-lg bg-surface-container text-secondary flex items-center justify-center mb-3">
+                <span className="material-symbols-outlined text-xl">event_repeat</span>
               </div>
+              <h3 className="font-bold text-sm text-on-surface">
+                Section 24: Periodic Re-verification
+              </h3>
+              <p className="text-xs text-on-surface-variant mt-2 leading-relaxed">
+                Every commercial measuring instrument must undergo statutory verification
+                annually or biennially. Certificates expire automatically if not renewed.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-surface-variant/30 text-[11px] text-secondary font-semibold">
+              Automated 30-Day Expiry Notice
             </div>
           </div>
-        ) : health ? (
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-              <span className="text-xs font-medium text-slate-500">API Status</span>
-              <div className="mt-1 flex items-center space-x-2">
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    health.status === "ok" ? "bg-emerald-500" : "bg-amber-500"
-                  }`}
-                />
-                <span className="font-semibold text-sm capitalize text-slate-800">
-                  {health.status}
-                </span>
-              </div>
-            </div>
 
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-              <span className="text-xs font-medium text-slate-500">Environment</span>
-              <div className="mt-1 font-semibold text-sm text-slate-800">
-                {health.environment}
+          <div className="p-5 bg-surface-container-lowest rounded-xl border border-surface-variant/40 shadow-xs flex flex-col justify-between">
+            <div>
+              <div className="w-9 h-9 rounded-lg bg-surface-container text-secondary flex items-center justify-center mb-3">
+                <span className="material-symbols-outlined text-xl">security</span>
               </div>
+              <h3 className="font-bold text-sm text-on-surface">
+                Section 30: Anti-Tamper Security Seals
+              </h3>
+              <p className="text-xs text-on-surface-variant mt-2 leading-relaxed">
+                Verification stamp seals embed SHA-256 cryptographic verification hashes
+                preventing unauthorized hardware alteration or weight manipulation.
+              </p>
             </div>
-
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-              <span className="text-xs font-medium text-slate-500">Database</span>
-              <div className="mt-1 flex items-center space-x-2">
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    health.database === "connected" ? "bg-emerald-500" : "bg-amber-500"
-                  }`}
-                />
-                <span className="font-semibold text-sm capitalize text-slate-800">
-                  {health.database}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-              <span className="text-xs font-medium text-slate-500">API Version</span>
-              <div className="mt-1 font-semibold text-sm text-slate-800">
-                v{health.version}
-              </div>
+            <div className="mt-4 pt-3 border-t border-surface-variant/30 text-[11px] text-tertiary font-semibold">
+              Cryptographically Signed QR Proof
             </div>
           </div>
-        ) : null}
+
+          <div className="p-5 bg-surface-container-lowest rounded-xl border border-surface-variant/40 shadow-xs flex flex-col justify-between">
+            <div>
+              <div className="w-9 h-9 rounded-lg bg-surface-container text-secondary flex items-center justify-center mb-3">
+                <span className="material-symbols-outlined text-xl">gavel</span>
+              </div>
+              <h3 className="font-bold text-sm text-on-surface">
+                Section 38: Fair Measure Protection
+              </h3>
+              <p className="text-xs text-on-surface-variant mt-2 leading-relaxed">
+                Empowering citizens and consumers to scan any physical weighing device in
+                retail shops, petrol pumps, or markets to confirm active certification.
+              </p>
+            </div>
+            <div className="mt-4 pt-3 border-t border-surface-variant/30 text-[11px] text-secondary font-semibold">
+              Direct Consumer Grievance Link
+            </div>
+          </div>
+        </div>
       </section>
 
-      {/* Verification Lifecycle Architecture Map */}
-      <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">
-          Core Legal Metrology Lifecycle
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-          {[
-            "1. Instrument Registration",
-            "2. Verification Request",
-            "3. Application Review",
-            "4. Officer Scheduling",
-            "5. Field/Lab Inspection",
-            "6. Verification Observations",
-            "7. Digital Certificate",
-            "8. QR Verification",
-          ].map((step, idx) => (
-            <div
-              key={idx}
-              className="p-3 rounded-lg bg-slate-50 border border-slate-200 font-medium text-slate-700"
-            >
-              {step}
-            </div>
-          ))}
+      {/* Stakeholder Action Banner */}
+      <section className="bg-gradient-to-r from-primary-container via-inverse-surface to-primary-container rounded-xl p-8 text-on-secondary shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-tertiary-fixed bg-tertiary-container px-2.5 py-0.5 rounded-full">
+            Authorized Portal Access
+          </span>
+          <h2 className="font-headline font-bold text-xl sm:text-2xl text-on-secondary mt-2">
+            Are you a Legal Metrology Officer or Business Owner?
+          </h2>
+          <p className="text-xs sm:text-sm text-inverse-on-surface/80 mt-1 max-w-xl">
+            Sign in to process verification applications, schedule field inspections,
+            log calibration testing observations, and generate digital certificates.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <Link
+            href="/login"
+            className="px-5 py-2.5 rounded-lg bg-secondary hover:bg-secondary-container text-on-secondary font-semibold text-xs transition shadow-md flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-base">login</span>
+            <span>Sign In to Portal</span>
+          </Link>
+          <Link
+            href="/dashboard"
+            className="px-5 py-2.5 rounded-lg bg-surface-container-lowest/15 hover:bg-surface-container-lowest/25 text-on-secondary font-semibold text-xs transition shadow-sm"
+          >
+            Go to Dashboard
+          </Link>
         </div>
       </section>
     </div>

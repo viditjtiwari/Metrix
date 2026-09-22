@@ -4,6 +4,10 @@ import React, { useState } from "react";
 import { useCreateInstrumentMutation } from "./instrumentApi";
 import { InstrumentType } from "@/types";
 import { Instrument } from "./instrumentTypes";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 
 interface RegisterInstrumentModalProps {
   onClose: () => void;
@@ -63,133 +67,77 @@ export const RegisterInstrumentModal: React.FC<RegisterInstrumentModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <h2 className="text-base font-semibold text-slate-900">
+    <Modal
+      title="Register Instrument"
+      subtitle="Enroll weighing or measuring equipment into the National Metrology Registry."
+      onClose={onClose}
+      size="md"
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSubmit} isLoading={isLoading}>
             Register Instrument
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 text-lg leading-none"
-          >
-            ×
-          </button>
+          </Button>
         </div>
-
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-3">
         {error && (
-          <div className="mt-3 rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700">
+          <div className="rounded-xl bg-error-container p-3 text-xs text-on-error-container">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-3 text-xs">
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Instrument Type <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={instrumentType}
-              onChange={(e) => setInstrumentType(e.target.value as InstrumentType)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-            >
-              {INSTRUMENT_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <Select
+          label="Instrument Type *"
+          value={instrumentType}
+          onChange={(e) => setInstrumentType(e.target.value as InstrumentType)}
+          options={INSTRUMENT_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+        />
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">
-                Manufacturer <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={manufacturer}
-                onChange={(e) => setManufacturer(e.target.value)}
-                placeholder="e.g. Avery Weigh-Tronix"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-              />
-            </div>
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">
-                Model Name <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={modelName}
-                onChange={(e) => setModelName(e.target.value)}
-                placeholder="e.g. ZM510"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-              />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Input
+            label="Manufacturer *"
+            required
+            value={manufacturer}
+            onChange={(e) => setManufacturer(e.target.value)}
+            placeholder="e.g. Avery Weigh-Tronix"
+          />
+          <Input
+            label="Model Name *"
+            required
+            value={modelName}
+            onChange={(e) => setModelName(e.target.value)}
+            placeholder="e.g. ZM510"
+          />
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">
-                Serial Number <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={serialNumber}
-                onChange={(e) => setSerialNumber(e.target.value)}
-                placeholder="e.g. SN-88201-A"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-              />
-            </div>
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">
-                Capacity
-              </label>
-              <input
-                type="text"
-                value={capacity}
-                onChange={(e) => setCapacity(e.target.value)}
-                placeholder="e.g. 500 kg x 50 g"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-              />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Input
+            label="Serial Number *"
+            required
+            value={serialNumber}
+            onChange={(e) => setSerialNumber(e.target.value)}
+            placeholder="e.g. SN-88201-A"
+          />
+          <Input
+            label="Capacity / Range"
+            value={capacity}
+            onChange={(e) => setCapacity(e.target.value)}
+            placeholder="e.g. 500 kg x 50 g"
+          />
+        </div>
 
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Installation / Operating Location <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Warehouse 3, Bay 4, Industrial Area"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 disabled:opacity-50 transition"
-            >
-              {isLoading ? "Registering..." : "Register Instrument"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <Input
+          label="Installation / Operating Location *"
+          required
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="e.g. Warehouse 3, Bay 4, Industrial Area"
+        />
+      </form>
+    </Modal>
   );
 };

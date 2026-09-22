@@ -5,10 +5,20 @@ import { useRegisterMutation, useLoginMutation } from "./authApi";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "./authSlice";
 import { UserRole } from "@/types";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 
 interface RegisterFormProps {
   onSuccess: (registeredEmail: string) => void;
 }
+
+const roleOptions = [
+  { value: "INSTRUMENT_OWNER", label: "Instrument Owner / Business" },
+  { value: "LMO", label: "Legal Metrology Officer (LMO)" },
+  { value: "GATC", label: "Test Centre (GATC)" },
+  { value: "ADMIN", label: "System Administrator" },
+];
 
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const dispatch = useAppDispatch();
@@ -21,7 +31,6 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<UserRole>("INSTRUMENT_OWNER");
 
-  // Stakeholder details (optional for general, but typical for owners)
   const [includeProfile, setIncludeProfile] = useState(false);
   const [businessName, setBusinessName] = useState("");
   const [tradeLicense, setTradeLicense] = useState("");
@@ -84,175 +93,130 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {errorMsg && (
-        <div className="p-3 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg">
+        <div className="p-3 text-xs text-on-error-container bg-error-container rounded-xl">
           {errorMsg}
         </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-            Full Name
-          </label>
-          <input
-            type="text"
-            required
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder="Rajesh Verma"
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-            Role
-          </label>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as UserRole)}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-          >
-            <option value="INSTRUMENT_OWNER">Instrument Owner / Business</option>
-            <option value="LMO">Legal Metrology Officer (LMO)</option>
-            <option value="GATC">Test Centre (GATC)</option>
-            <option value="ADMIN">System Administrator</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-          Email Address
-        </label>
-        <input
-          type="email"
+        <Input
+          label="Full Name"
+          type="text"
           required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="owner@example.com"
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          placeholder="Rajesh Verma"
+        />
+
+        <Select
+          label="Role"
+          value={role}
+          onChange={(e) => setRole(e.target.value as UserRole)}
+          options={roleOptions}
         />
       </div>
 
-      <div>
-        <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-          Password
-        </label>
-        <input
-          type="password"
-          required
-          minLength={6}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Minimum 6 characters"
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-        />
-      </div>
+      <Input
+        label="Email Address"
+        type="email"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="owner@example.com"
+        icon="mail"
+      />
+
+      <Input
+        label="Password"
+        type="password"
+        required
+        minLength={6}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Minimum 6 characters"
+        icon="lock"
+      />
 
       {/* Optional Business Profile Toggle */}
-      <div className="pt-2 border-t border-slate-200">
-        <label className="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer">
+      <div className="pt-2 border-t border-surface-variant/40">
+        <label className="flex items-center space-x-2 text-xs text-on-surface cursor-pointer">
           <input
             type="checkbox"
             checked={includeProfile}
             onChange={(e) => setIncludeProfile(e.target.checked)}
-            className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+            className="rounded border-surface-variant text-tertiary focus:ring-tertiary"
           />
           <span className="font-medium">Attach Business / Organization Profile</span>
         </label>
       </div>
 
       {includeProfile && (
-        <div className="space-y-3 pt-2 bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div>
-              <label className="block font-medium text-slate-600 mb-0.5">Business Name</label>
-              <input
-                type="text"
-                required
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="Verma Retail Store"
-                className="w-full px-2.5 py-1.5 border border-slate-300 rounded"
-              />
-            </div>
-            <div>
-              <label className="block font-medium text-slate-600 mb-0.5">Contact Phone</label>
-              <input
-                type="tel"
-                required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+919876543210"
-                className="w-full px-2.5 py-1.5 border border-slate-300 rounded"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <div>
-              <label className="block font-medium text-slate-600 mb-0.5">City</label>
-              <input
-                type="text"
-                required
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="Indore"
-                className="w-full px-2.5 py-1.5 border border-slate-300 rounded"
-              />
-            </div>
-            <div>
-              <label className="block font-medium text-slate-600 mb-0.5">State</label>
-              <input
-                type="text"
-                required
-                value={stateName}
-                onChange={(e) => setStateName(e.target.value)}
-                placeholder="Madhya Pradesh"
-                className="w-full px-2.5 py-1.5 border border-slate-300 rounded"
-              />
-            </div>
-            <div>
-              <label className="block font-medium text-slate-600 mb-0.5">Pincode</label>
-              <input
-                type="text"
-                required
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value)}
-                placeholder="452001"
-                className="w-full px-2.5 py-1.5 border border-slate-300 rounded"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block font-medium text-slate-600 mb-0.5">Address</label>
-            <input
+        <div className="space-y-3 pt-2 bg-surface-container-low p-3.5 rounded-xl border border-surface-variant/40 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Business Name"
               type="text"
               required
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="12, Market Square"
-              className="w-full px-2.5 py-1.5 border border-slate-300 rounded"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              placeholder="Verma Retail Store"
+            />
+            <Input
+              label="Contact Phone"
+              type="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+919876543210"
             />
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Input
+              label="City"
+              type="text"
+              required
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Indore"
+            />
+            <Input
+              label="State"
+              type="text"
+              required
+              value={stateName}
+              onChange={(e) => setStateName(e.target.value)}
+              placeholder="Madhya Pradesh"
+            />
+            <Input
+              label="Pincode"
+              type="text"
+              required
+              value={pincode}
+              onChange={(e) => setPincode(e.target.value)}
+              placeholder="452001"
+            />
+          </div>
+
+          <Input
+            label="Address Line"
+            type="text"
+            required
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="12, Market Square"
+          />
         </div>
       )}
 
-      <button
+      <Button
         type="submit"
-        disabled={isLoading}
-        className="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow transition disabled:opacity-50 flex items-center justify-center space-x-2"
+        isLoading={isLoading}
+        variant="primary"
+        className="w-full justify-center"
       >
-        {isLoading ? (
-          <>
-            <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-            <span>Creating Account...</span>
-          </>
-        ) : (
-          <span>Register Account</span>
-        )}
-      </button>
+        Register Account
+      </Button>
     </form>
   );
 }

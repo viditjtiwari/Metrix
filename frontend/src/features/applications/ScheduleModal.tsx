@@ -2,6 +2,10 @@
 
 import React, { useState } from "react";
 import { useGetVerifiersQuery, useScheduleInspectionMutation } from "./applicationApi";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 
 interface ScheduleModalProps {
   applicationId: number;
@@ -66,121 +70,85 @@ export function ScheduleModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 className="text-base font-semibold text-slate-900">
-            Schedule Verification Inspection
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition"
-          >
-            ✕
-          </button>
-        </div>
+  const verifierOptions = [
+    { value: "", label: "-- Unassigned (Assign later) --" },
+    ...verifiers.map((v) => ({
+      value: String(v.id),
+      label: `${v.full_name} (${v.role}) - ${v.email}`,
+    })),
+  ];
 
+  return (
+    <Modal
+      title="Schedule Verification Inspection"
+      subtitle={`Application #${applicationId}`}
+      onClose={onClose}
+      size="md"
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSubmit} isLoading={isLoading}>
+            Confirm Schedule
+          </Button>
+        </div>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
         {errorMsg && (
-          <div className="mt-4 rounded-lg bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700">
+          <div className="rounded-xl bg-error-container p-3 text-xs text-on-error-container">
             {errorMsg}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">
-                Scheduled Date *
-              </label>
-              <input
-                type="date"
-                required
-                value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-              />
-            </div>
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">
-                Time Slot
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. 10:30 AM"
-                value={scheduledTime}
-                onChange={(e) => setScheduledTime(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-              />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Input
+            label="Scheduled Date"
+            type="date"
+            required
+            value={scheduledDate}
+            onChange={(e) => setScheduledDate(e.target.value)}
+          />
+          <Input
+            label="Time Slot"
+            type="text"
+            placeholder="e.g. 10:30 AM"
+            value={scheduledTime}
+            onChange={(e) => setScheduledTime(e.target.value)}
+          />
+        </div>
 
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Inspection Location (Premises / Lab)
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Dispenser 3, Shell Station, Ring Road"
-              value={inspectionLocation}
-              onChange={(e) => setInspectionLocation(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-            />
-          </div>
+        <Input
+          label="Inspection Location (Premises / Lab)"
+          type="text"
+          placeholder="e.g. Dispenser 3, Shell Station, Ring Road"
+          value={inspectionLocation}
+          onChange={(e) => setInspectionLocation(e.target.value)}
+        />
 
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Assign Verifier (LMO / GATC)
-            </label>
-            <select
-              value={assignedToId || ""}
-              onChange={(e) =>
-                setAssignedToId(
-                  e.target.value ? Number(e.target.value) : undefined
-                )
-              }
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-            >
-              <option value="">-- Unassigned (Assign later) --</option>
-              {verifiers.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.full_name} ({v.role}) - {v.email}
-                </option>
-              ))}
-            </select>
-          </div>
+        <Select
+          label="Assign Verifier (LMO / GATC)"
+          value={assignedToId ? String(assignedToId) : ""}
+          onChange={(e) =>
+            setAssignedToId(e.target.value ? Number(e.target.value) : undefined)
+          }
+          options={verifierOptions}
+        />
 
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Scheduling Remarks
-            </label>
-            <textarea
-              rows={2}
-              placeholder="e.g. Standard working weights required for Span check"
-              value={schedulingRemarks}
-              onChange={(e) => setSchedulingRemarks(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-            />
-          </div>
-
-          <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition disabled:opacity-50"
-            >
-              {isLoading ? "Saving..." : "Confirm Schedule"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div>
+          <label className="block text-xs font-semibold text-on-surface mb-1">
+            Scheduling Remarks
+          </label>
+          <textarea
+            rows={2}
+            placeholder="e.g. Standard working weights required for Span check"
+            value={schedulingRemarks}
+            onChange={(e) => setSchedulingRemarks(e.target.value)}
+            className="w-full rounded-xl border border-surface-variant/60 bg-surface-container-low px-3 py-2 text-xs text-on-surface focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-hidden resize-none"
+          />
+        </div>
+      </form>
+    </Modal>
   );
 }

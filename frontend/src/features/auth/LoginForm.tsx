@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { useLoginMutation } from "./authApi";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "./authSlice";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -52,61 +54,92 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {errorMsg && (
-        <div className="p-3 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg">
+        <div className="p-3 text-xs text-on-error-container bg-error-container rounded-xl">
           {errorMsg}
         </div>
       )}
 
-      <div>
-        <label
-          htmlFor="login-email"
-          className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1"
-        >
-          Email Address
-        </label>
-        <input
-          id="login-email"
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="officer@metrix.gov.in"
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-        />
-      </div>
+      <Input
+        label="Email Address"
+        type="email"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="officer@metrix.gov.in"
+        icon="mail"
+      />
 
-      <div>
-        <label
-          htmlFor="login-password"
-          className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1"
-        >
-          Password
-        </label>
-        <input
-          id="login-password"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-        />
-      </div>
+      <Input
+        label="Password"
+        type="password"
+        required
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="••••••••"
+        icon="lock"
+      />
 
-      <button
+      <Button
         type="submit"
-        disabled={isLoading}
-        className="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow transition disabled:opacity-50 flex items-center justify-center space-x-2"
+        isLoading={isLoading}
+        variant="primary"
+        className="w-full justify-center"
       >
-        {isLoading ? (
-          <>
-            <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-            <span>Signing in...</span>
-          </>
-        ) : (
-          <span>Sign In</span>
-        )}
-      </button>
+        Sign In to Account
+      </Button>
+
+      {/* Quick Demo Credentials for Rapid Evaluation */}
+      <div className="pt-3 border-t border-surface-variant/40 space-y-2 text-xs">
+        <span className="text-[11px] font-semibold text-outline uppercase tracking-wider block">
+          Demo Accounts (1-Click Autofill):
+        </span>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setEmail("lmo@metrix.gov.in");
+              setPassword("Officer@123456");
+            }}
+            className="p-2 text-left rounded-xl bg-surface-container-low hover:bg-surface-container border border-surface-variant/40 transition"
+          >
+            <div className="font-bold text-on-surface text-[11px]">👮 LMO Officer</div>
+            <div className="text-[10px] text-outline truncate">lmo@metrix.gov.in</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEmail("owner@example.com");
+              setPassword("Owner@123456");
+            }}
+            className="p-2 text-left rounded-xl bg-surface-container-low hover:bg-surface-container border border-surface-variant/40 transition"
+          >
+            <div className="font-bold text-on-surface text-[11px]">🏪 Instrument Owner</div>
+            <div className="text-[10px] text-outline truncate">owner@example.com</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEmail("gatc@metrix.gov.in");
+              setPassword("Lab@123456");
+            }}
+            className="p-2 text-left rounded-xl bg-surface-container-low hover:bg-surface-container border border-surface-variant/40 transition"
+          >
+            <div className="font-bold text-on-surface text-[11px]">🔬 GATC Lab</div>
+            <div className="text-[10px] text-outline truncate">gatc@metrix.gov.in</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEmail("admin@metrix.gov.in");
+              setPassword("Admin@123456");
+            }}
+            className="p-2 text-left rounded-xl bg-surface-container-low hover:bg-surface-container border border-surface-variant/40 transition"
+          >
+            <div className="font-bold text-on-surface text-[11px]">🛡️ System Admin</div>
+            <div className="text-[10px] text-outline truncate">admin@metrix.gov.in</div>
+          </button>
+        </div>
+      </div>
     </form>
   );
 }

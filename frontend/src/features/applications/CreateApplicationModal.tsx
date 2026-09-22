@@ -4,6 +4,9 @@ import React, { useState } from "react";
 import { useSearchInstrumentsQuery } from "@/features/instruments/instrumentApi";
 import { useCreateApplicationMutation } from "./applicationApi";
 import { ApplicationResponse } from "@/types";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
 
 interface CreateApplicationModalProps {
   preselectedInstrumentId?: number;
@@ -55,115 +58,92 @@ export const CreateApplicationModal: React.FC<CreateApplicationModalProps> = ({
 
   const instruments = instrumentsData?.items || [];
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div>
-            <h2 className="text-base font-semibold text-slate-900">
-              New Verification Application
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Submit a legal metrology verification or re-verification request.
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 text-lg leading-none"
-          >
-            ×
-          </button>
-        </div>
+  const instrumentOptions = [
+    { value: "", label: "-- Select an instrument --" },
+    ...instruments.map((inst) => ({
+      value: String(inst.id),
+      label: `[${inst.registration_number}] ${inst.manufacturer} ${inst.model_name} (S/N: ${inst.serial_number}) - ${inst.location}`,
+    })),
+  ];
 
+  const appTypeOptions = [
+    { value: "INITIAL", label: "Initial Verification" },
+    { value: "RE_VERIFICATION", label: "Periodic Re-verification" },
+  ];
+
+  return (
+    <Modal
+      title="New Verification Application"
+      subtitle="Submit a legal metrology verification or re-verification request."
+      onClose={onClose}
+      size="md"
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button
+            variant="outline"
+            disabled={isLoading || instruments.length === 0}
+            onClick={() => handleAction(false)}
+          >
+            Save as Draft
+          </Button>
+          <Button
+            variant="primary"
+            disabled={isLoading || instruments.length === 0}
+            isLoading={isLoading}
+            onClick={() => handleAction(true)}
+          >
+            Submit Application
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
         {error && (
-          <div className="mt-3 rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700">
+          <div className="rounded-xl bg-error-container p-3 text-xs text-on-error-container">
             {error}
           </div>
         )}
 
-        <div className="mt-4 space-y-4 text-xs">
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Select Instrument <span className="text-rose-500">*</span>
-            </label>
-            {loadingInstruments ? (
-              <div className="p-2 border border-slate-200 rounded-lg text-slate-400">
-                Loading registered instruments...
-              </div>
-            ) : instruments.length === 0 ? (
-              <div className="p-3 border border-amber-200 bg-amber-50 rounded-lg text-amber-800">
-                No active instruments found. Please register an instrument first.
-              </div>
-            ) : (
-              <select
-                value={instrumentId}
-                onChange={(e) => setInstrumentId(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-              >
-                <option value="">-- Select an instrument --</option>
-                {instruments.map((inst) => (
-                  <option key={inst.id} value={inst.id}>
-                    [{inst.registration_number}] {inst.manufacturer} {inst.model_name} (S/N: {inst.serial_number}) - {inst.location}
-                  </option>
-                ))}
-              </select>
-            )}
+        {loadingInstruments ? (
+          <div className="p-3 border border-surface-variant/40 rounded-xl text-on-surface-variant text-xs">
+            Loading registered instruments...
           </div>
+        ) : instruments.length === 0 ? (
+          <div className="p-3 rounded-xl border border-tertiary/30 bg-tertiary-container/15 text-on-surface text-xs">
+            No active instruments found. Please register an instrument first.
+          </div>
+        ) : (
+          <Select
+            label="Select Instrument *"
+            value={String(instrumentId)}
+            onChange={(e) => setInstrumentId(e.target.value)}
+            options={instrumentOptions}
+          />
+        )}
 
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Application Type <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={applicationType}
-              onChange={(e) => setApplicationType(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-            >
-              <option value="INITIAL">Initial Verification</option>
-              <option value="RE_VERIFICATION">Periodic Re-verification</option>
-            </select>
-          </div>
+        <Select
+          label="Application Type *"
+          value={applicationType}
+          onChange={(e) => setApplicationType(e.target.value)}
+          options={appTypeOptions}
+        />
 
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Remarks / Inspection Location Notes
-            </label>
-            <textarea
-              rows={3}
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-              placeholder="e.g. Standard annual calibration check. Site contact: Rajan (9876543210)."
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden resize-none"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={isLoading || instruments.length === 0}
-              onClick={() => handleAction(false)}
-              className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 disabled:opacity-50 transition"
-            >
-              {isLoading ? "Saving..." : "Save as Draft"}
-            </button>
-            <button
-              type="button"
-              disabled={isLoading || instruments.length === 0}
-              onClick={() => handleAction(true)}
-              className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 disabled:opacity-50 transition"
-            >
-              {isLoading ? "Submitting..." : "Submit Application"}
-            </button>
-          </div>
+        <div>
+          <label className="block text-xs font-semibold text-on-surface mb-1">
+            Remarks / Inspection Location Notes
+          </label>
+          <textarea
+            rows={3}
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            placeholder="e.g. Standard annual calibration check. Site contact: Rajan (9876543210)."
+            className="w-full rounded-xl border border-surface-variant/60 bg-surface-container-low px-3 py-2 text-xs text-on-surface focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-hidden resize-none"
+          />
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

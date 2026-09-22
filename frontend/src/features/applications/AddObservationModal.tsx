@@ -2,6 +2,9 @@
 
 import React, { useState } from "react";
 import { useAddObservationMutation } from "./applicationApi";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 interface AddObservationModalProps {
   inspectionId: number;
@@ -57,125 +60,88 @@ export function AddObservationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 className="text-base font-semibold text-slate-900">
-            Record Verification Observation
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition"
-          >
-            ✕
-          </button>
+    <Modal
+      title="Record Verification Observation"
+      subtitle={`Inspection #${inspectionId}`}
+      onClose={onClose}
+      size="md"
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSubmit} isLoading={isLoading}>
+            Record Observation
+          </Button>
         </div>
-
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
         {errorMsg && (
-          <div className="mt-4 rounded-lg bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700">
+          <div className="rounded-xl bg-error-container p-3 text-xs text-on-error-container">
             {errorMsg}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4 text-xs">
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Test Parameter Name *
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Zero Load Test, Repeatability, Span Error"
-              value={parameterName}
-              onChange={(e) => setParameterName(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-            />
-          </div>
+        <Input
+          label="Test Parameter Name *"
+          required
+          placeholder="e.g. Zero Load Test, Repeatability, Span Error"
+          value={parameterName}
+          onChange={(e) => setParameterName(e.target.value)}
+        />
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">
-                Observed Value *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. 0.001, Pass"
-                value={observedValue}
-                onChange={(e) => setObservedValue(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-              />
-            </div>
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">
-                Standard / Reference
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. 0.000, <= 0.005"
-                value={standardValue}
-                onChange={(e) => setStandardValue(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-              />
-            </div>
-            <div>
-              <label className="block font-medium text-slate-700 mb-1">
-                Unit
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. kg, g, L"
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-              />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Input
+            label="Observed Value *"
+            required
+            placeholder="e.g. 0.001"
+            value={observedValue}
+            onChange={(e) => setObservedValue(e.target.value)}
+          />
+          <Input
+            label="Standard / Reference"
+            placeholder="e.g. 0.000"
+            value={standardValue}
+            onChange={(e) => setStandardValue(e.target.value)}
+          />
+          <Input
+            label="Unit"
+            placeholder="e.g. kg, g, L"
+            value={unit}
+            onChange={(e) => setUnit(e.target.value)}
+          />
+        </div>
 
-          <div className="flex items-center space-x-2 py-1">
-            <input
-              type="checkbox"
-              id="isPassed"
-              checked={isPassed}
-              onChange={(e) => setIsPassed(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-            />
-            <label htmlFor="isPassed" className="text-slate-800 font-medium select-none">
-              Parameter Passed Metrological Tolerance
-            </label>
-          </div>
+        <div className="flex items-center space-x-2 py-1">
+          <input
+            type="checkbox"
+            id="isPassed"
+            checked={isPassed}
+            onChange={(e) => setIsPassed(e.target.checked)}
+            className="h-4 w-4 rounded border-surface-variant text-tertiary focus:ring-tertiary"
+          />
+          <label
+            htmlFor="isPassed"
+            className="text-on-surface font-medium select-none text-xs"
+          >
+            Parameter Passed Metrological Tolerance
+          </label>
+        </div>
 
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Observation Remarks / Notes
-            </label>
-            <textarea
-              rows={2}
-              placeholder="e.g. Residual error within Class II permissible range"
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-            />
-          </div>
-
-          <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition disabled:opacity-50"
-            >
-              {isLoading ? "Saving..." : "Record Observation"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div>
+          <label className="block text-xs font-semibold text-on-surface mb-1">
+            Observation Remarks / Notes
+          </label>
+          <textarea
+            rows={2}
+            placeholder="e.g. Residual error within Class II permissible range"
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            className="w-full rounded-xl border border-surface-variant/60 bg-surface-container-low px-3 py-2 text-xs text-on-surface focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-hidden resize-none"
+          />
+        </div>
+      </form>
+    </Modal>
   );
 }

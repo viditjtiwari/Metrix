@@ -2,6 +2,7 @@
 
 import React from "react";
 import { ApplicationResponse, User } from "@/types";
+import { Button } from "@/components/ui/Button";
 
 interface ApplicationActionBarProps {
   app: ApplicationResponse;
@@ -37,87 +38,99 @@ export const ApplicationActionBar: React.FC<ApplicationActionBarProps> = ({
   onSubmitDraft,
 }) => {
   const isOfficerOrAdmin = user?.role === "LMO" || user?.role === "ADMIN";
-  const isOwnerOrAdmin = user?.role === "INSTRUMENT_OWNER" || user?.role === "ADMIN" || user?.id === app.applicant_id;
+  const isOwnerOrAdmin =
+    user?.role === "INSTRUMENT_OWNER" ||
+    user?.role === "ADMIN" ||
+    user?.id === app.applicant_id;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {app.status === "DRAFT" && isOwnerOrAdmin && onSubmitDraft && (
-        <button
+        <Button
           onClick={onSubmitDraft}
-          disabled={updatingStatus}
-          className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
+          isLoading={updatingStatus}
+          variant="primary"
+          size="sm"
         >
           Submit Application
-        </button>
+        </Button>
       )}
 
       {app.status === "SUBMITTED" && isOfficerOrAdmin && (
         <>
-          <button
+          <Button
             onClick={onReview}
-            disabled={updatingStatus}
-            className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
+            isLoading={updatingStatus}
+            variant="primary"
+            size="sm"
           >
             Accept for Review
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onRejectReview}
             disabled={updatingStatus}
-            className="px-3.5 py-1.5 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50 text-xs font-medium transition"
+            variant="danger"
+            size="sm"
           >
             Reject Application
-          </button>
+          </Button>
         </>
       )}
 
       {app.status === "UNDER_REVIEW" && isOfficerOrAdmin && (
         <>
-          <button
+          <Button
             onClick={onOpenSchedule}
-            className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition"
+            variant="primary"
+            size="sm"
           >
             Schedule Inspection
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onOpenAssign}
-            className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-medium transition"
+            variant="outline"
+            size="sm"
           >
             Assign Verifier
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onRejectReview}
-            className="px-3.5 py-1.5 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50 text-xs font-medium transition"
+            variant="danger"
+            size="sm"
           >
             Reject
-          </button>
+          </Button>
         </>
       )}
 
       {app.status === "SCHEDULED" && (
         <>
           {isAssignedVerifier && (
-            <button
+            <Button
               onClick={onStartInspection}
-              disabled={startingInspection}
-              className="px-3.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition"
+              isLoading={startingInspection}
+              variant="primary"
+              size="sm"
             >
               Start Inspection
-            </button>
+            </Button>
           )}
           {isOfficerOrAdmin && (
             <>
-              <button
+              <Button
                 onClick={onOpenSchedule}
-                className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-medium transition"
+                variant="outline"
+                size="sm"
               >
                 Reschedule
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={onOpenAssign}
-                className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-medium transition"
+                variant="outline"
+                size="sm"
               >
                 Reassign
-              </button>
+              </Button>
             </>
           )}
         </>
@@ -125,28 +138,32 @@ export const ApplicationActionBar: React.FC<ApplicationActionBarProps> = ({
 
       {app.status === "INSPECTION_IN_PROGRESS" && isAssignedVerifier && (
         <>
-          <button
+          <Button
             onClick={onOpenAddObs}
-            className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
+            variant="secondary"
+            size="sm"
           >
             + Add Observation
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onOpenResult}
-            className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition"
+            variant="primary"
+            size="sm"
           >
             Finalize Result
-          </button>
+          </Button>
         </>
       )}
 
       {app.status === "VERIFIED" && isOfficerOrAdmin && (
-        <button
+        <Button
           onClick={onOpenIssueCert}
-          className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition shadow-xs flex items-center gap-1.5 animate-pulse"
+          variant="primary"
+          size="sm"
+          className="animate-pulse shadow-md"
         >
           📜 Issue Certificate
-        </button>
+        </Button>
       )}
     </div>
   );

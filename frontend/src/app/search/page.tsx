@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import { useSearchInstrumentsQuery } from "@/features/instruments/instrumentApi";
 import { useGetApplicationsQuery } from "@/features/applications/applicationApi";
 import {
@@ -9,30 +9,50 @@ import {
   useGetExpiringCertificatesQuery,
   useGetExpiredCertificatesQuery,
 } from "@/features/certificates/certificateApi";
+import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { DataTable } from "@/components/ui/DataTable";
+import {
+  instrumentColumns,
+  applicationColumns,
+  certColumns,
+} from "@/features/search/searchColumns";
 
 type SearchDomain = "instruments" | "applications" | "certificates";
 type CertFilterType = "all" | "expiring" | "expired";
 
+const domainTabs: { key: SearchDomain; label: string; icon: string }[] = [
+  { key: "instruments", label: "Instruments", icon: "precision_manufacturing" },
+  { key: "applications", label: "Applications", icon: "assignment" },
+  { key: "certificates", label: "Certificates", icon: "verified_user" },
+];
+
 export default function SearchPage() {
   const [domain, setDomain] = useState<SearchDomain>("instruments");
-
-  // Search input state
   const [query, setQuery] = useState("");
   const [certFilter, setCertFilter] = useState<CertFilterType>("all");
 
-  // Query hooks
   const instrumentsQuery = useSearchInstrumentsQuery(
-    domain === "instruments" ? { registration_number: query || undefined, manufacturer: query || undefined } : undefined,
+    domain === "instruments"
+      ? {
+          registration_number: query || undefined,
+          manufacturer: query || undefined,
+        }
+      : undefined,
     { skip: domain !== "instruments" }
   );
 
   const applicationsQuery = useGetApplicationsQuery(
-    domain === "applications" ? { application_number: query || undefined } : undefined,
+    domain === "applications"
+      ? { application_number: query || undefined }
+      : undefined,
     { skip: domain !== "applications" }
   );
 
   const certSearchQuery = useSearchCertificatesQuery(
-    domain === "certificates" && certFilter === "all" ? { certificate_number: query || undefined } : undefined,
+    domain === "certificates" && certFilter === "all"
+      ? { certificate_number: query || undefined }
+      : undefined,
     { skip: domain !== "certificates" || certFilter !== "all" }
   );
 
@@ -45,201 +65,132 @@ export default function SearchPage() {
   });
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">Advanced Search</h1>
-        <p className="mt-1 text-xs text-slate-500">
-          Query registered instruments, verification applications, and digital certificates across your tenancy.
-        </p>
+    <AuthGuard>
+      <div className="space-y-6 animate-fade-in">
+        {/* Page Header */}
+        <div>
+          <h1 className="font-headline font-bold text-xl text-on-surface">
+            Registry Search
+          </h1>
+          <p className="text-xs text-on-surface-variant mt-0.5">
+            Cross-domain search across instruments, verification applications,
+            and digital certificates.
+          </p>
+        </div>
 
-        {/* Domain Tabs */}
-        <div className="flex gap-2 mt-4 border-b border-slate-100 pb-2">
-          {(["instruments", "applications", "certificates"] as SearchDomain[]).map((tab) => (
+        {/* Domain Switcher */}
+        <div className="flex border-b border-surface-variant/40 gap-1">
+          {domainTabs.map((t) => (
             <button
-              key={tab}
+              key={t.key}
               onClick={() => {
-                setDomain(tab);
+                setDomain(t.key);
                 setQuery("");
               }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition ${
-                domain === tab
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition ${
+                domain === t.key
+                  ? "border-secondary text-secondary"
+                  : "border-transparent text-on-surface-variant hover:text-on-surface hover:border-surface-variant"
               }`}
             >
-              {tab}
+              <span className="material-symbols-outlined text-base">
+                {t.icon}
+              </span>
+              <span>{t.label}</span>
             </button>
           ))}
         </div>
 
-        {/* Search Bar & Sub-filters */}
-        <div className="mt-4 flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            placeholder={
-              domain === "instruments"
-                ? "Search by registration or manufacturer..."
-                : domain === "applications"
-                ? "Search by application number (e.g. APP-)..."
-                : "Search by certificate number (e.g. CERT-)..."
-            }
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
-          />
-
-          {domain === "certificates" && (
-            <div className="flex gap-1">
-              {(["all", "expiring", "expired"] as CertFilterType[]).map((cf) => (
-                <button
-                  key={cf}
-                  onClick={() => setCertFilter(cf)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize border transition ${
-                    certFilter === cf
-                      ? "border-emerald-600 bg-emerald-50 text-emerald-800"
-                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  {cf === "expiring" ? "Expiring Soon" : cf}
-                </button>
-              ))}
+        {/* Search Bar & Filters */}
+        <Card>
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
+            <div className="flex-1">
+              <Input
+                label={`Search ${domain}`}
+                placeholder={
+                  domain === "instruments"
+                    ? "Filter by registration number, manufacturer..."
+                    : domain === "applications"
+                    ? "Filter by application number..."
+                    : "Filter by certificate number..."
+                }
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                icon="search"
+              />
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Results Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            {domain === "certificates" && (
+              <div className="flex gap-1">
+                {(["all", "expiring", "expired"] as CertFilterType[]).map(
+                  (cf) => (
+                    <button
+                      key={cf}
+                      onClick={() => setCertFilter(cf)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize border transition ${
+                        certFilter === cf
+                          ? "border-secondary bg-secondary/5 text-secondary"
+                          : "border-surface-variant/40 bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-low"
+                      }`}
+                    >
+                      {cf === "expiring" ? "Expiring Soon" : cf}
+                    </button>
+                  )
+                )}
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* Results */}
         {domain === "instruments" && (
-          <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
-              <tr>
-                <th className="p-3">Reg. Number</th>
-                <th className="p-3">Type</th>
-                <th className="p-3">Manufacturer / Model</th>
-                <th className="p-3">Serial No.</th>
-                <th className="p-3">Location</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {instrumentsQuery.isLoading ? (
-                <tr><td colSpan={5} className="p-8 text-center text-slate-400">Loading instruments...</td></tr>
-              ) : !instrumentsQuery.data?.items.length ? (
-                <tr><td colSpan={5} className="p-8 text-center text-slate-400">No instruments found.</td></tr>
-              ) : (
-                instrumentsQuery.data.items.map((i) => (
-                  <tr key={i.id} className="hover:bg-slate-50">
-                    <td className="p-3 font-mono font-medium text-slate-900">{i.registration_number}</td>
-                    <td className="p-3">{i.instrument_type}</td>
-                    <td className="p-3">{i.manufacturer} - {i.model_name}</td>
-                    <td className="p-3 font-mono">{i.serial_number}</td>
-                    <td className="p-3">{i.location}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <DataTable
+            columns={instrumentColumns}
+            data={instrumentsQuery.data?.items || []}
+            keyExtractor={(r) => r.id}
+            isLoading={instrumentsQuery.isLoading}
+            isError={instrumentsQuery.isError}
+            emptyIcon="precision_manufacturing"
+            emptyTitle="No instruments found"
+            emptyDescription="Try adjusting your search query."
+          />
         )}
 
         {domain === "applications" && (
-          <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
-              <tr>
-                <th className="p-3">App Number</th>
-                <th className="p-3">Instrument ID</th>
-                <th className="p-3">Type</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Created</th>
-                <th className="p-3">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {applicationsQuery.isLoading ? (
-                <tr><td colSpan={6} className="p-8 text-center text-slate-400">Loading applications...</td></tr>
-              ) : !applicationsQuery.data?.items.length ? (
-                <tr><td colSpan={6} className="p-8 text-center text-slate-400">No applications found.</td></tr>
-              ) : (
-                applicationsQuery.data.items.map((app) => (
-                  <tr key={app.id} className="hover:bg-slate-50">
-                    <td className="p-3 font-mono font-medium text-slate-900">{app.application_number}</td>
-                    <td className="p-3 font-mono">#{app.instrument_id}</td>
-                    <td className="p-3">{app.application_type}</td>
-                    <td className="p-3"><span className="px-2 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-[11px]">{app.status}</span></td>
-                    <td className="p-3 text-slate-500">{new Date(app.created_at).toLocaleDateString()}</td>
-                    <td className="p-3">
-                      <Link href={`/applications/${app.id}`} className="text-emerald-600 hover:text-emerald-700 font-medium">
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <DataTable
+            columns={applicationColumns}
+            data={applicationsQuery.data?.items || []}
+            keyExtractor={(r) => r.id}
+            isLoading={applicationsQuery.isLoading}
+            isError={applicationsQuery.isError}
+            emptyIcon="assignment"
+            emptyTitle="No applications found"
+            emptyDescription="Try adjusting your search query."
+          />
         )}
 
-        {domain === "certificates" && (
-          <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
-              <tr>
-                <th className="p-3">Cert Number</th>
-                <th className="p-3">App / Instrument</th>
-                <th className="p-3">Valid From</th>
-                <th className="p-3">Valid Until</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {(() => {
-                const activeQuery =
-                  certFilter === "expiring"
-                    ? certExpiringQuery
-                    : certFilter === "expired"
-                    ? certExpiredQuery
-                    : certSearchQuery;
+        {domain === "certificates" && (() => {
+          const activeQuery =
+            certFilter === "expiring"
+              ? certExpiringQuery
+              : certFilter === "expired"
+              ? certExpiredQuery
+              : certSearchQuery;
 
-                if (activeQuery.isLoading) {
-                  return <tr><td colSpan={6} className="p-8 text-center text-slate-400">Loading certificates...</td></tr>;
-                }
-                if (!activeQuery.data?.items.length) {
-                  return <tr><td colSpan={6} className="p-8 text-center text-slate-400">No certificates found.</td></tr>;
-                }
-                return activeQuery.data.items.map((cert) => (
-                  <tr key={cert.id} className="hover:bg-slate-50">
-                    <td className="p-3 font-mono font-semibold text-slate-900">{cert.certificate_number}</td>
-                    <td className="p-3 font-mono text-slate-600">
-                      {cert.application_number || `#${cert.application_id}`} / {cert.instrument_registration_number || `#${cert.instrument_id}`}
-                    </td>
-                    <td className="p-3">{cert.valid_from}</td>
-                    <td className="p-3 font-medium">{cert.valid_until}</td>
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
-                          cert.status === "ACTIVE"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : "bg-rose-50 text-rose-700 border border-rose-200"
-                        }`}
-                      >
-                        {cert.status}
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      <Link
-                        href={`/verify?token=${encodeURIComponent(cert.verification_token)}`}
-                        className="text-emerald-600 hover:text-emerald-700 font-medium"
-                      >
-                        Verify
-                      </Link>
-                    </td>
-                  </tr>
-                ));
-              })()}
-            </tbody>
-          </table>
-        )}
+          return (
+            <DataTable
+              columns={certColumns}
+              data={activeQuery.data?.items || []}
+              keyExtractor={(r) => r.id}
+              isLoading={activeQuery.isLoading}
+              isError={activeQuery.isError}
+              emptyIcon="verified_user"
+              emptyTitle="No certificates found"
+              emptyDescription="Try adjusting your search query."
+            />
+          );
+        })()}
       </div>
-    </div>
+    </AuthGuard>
   );
 }

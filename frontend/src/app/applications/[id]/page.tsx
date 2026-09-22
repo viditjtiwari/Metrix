@@ -21,7 +21,9 @@ import { ScheduleModal } from "@/features/applications/ScheduleModal";
 import { StatusTimeline } from "@/features/applications/StatusTimeline";
 import { CertificateCard } from "@/features/certificates/CertificateCard";
 import { IssueCertificateModal } from "@/features/certificates/IssueCertificateModal";
+import { RejectModal } from "@/features/applications/RejectModal";
 import { useAppSelector } from "@/store/hooks";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 
 export default function ApplicationDetailPage() {
   const params = useParams();
@@ -33,6 +35,7 @@ export default function ApplicationDetailPage() {
   const [showAddObs, setShowAddObs] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [showIssueCert, setShowIssueCert] = useState(false);
+  const [showReject, setShowReject] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const { data: app, isLoading, isError, refetch } = useGetApplicationQuery(applicationId, {
@@ -62,15 +65,14 @@ export default function ApplicationDetailPage() {
     }
   };
 
-  const handleRejectReview = async () => {
-    const reason = prompt("Enter reason for rejection:");
-    if (!reason) return;
+  const handleRejectConfirm = async (reason: string) => {
     setActionError(null);
     try {
       await updateStatus({ id: applicationId, status: "REJECTED", remarks: reason }).unwrap();
       refetch();
     } catch (err: unknown) {
       setActionError((err as { data?: { detail?: string } })?.data?.detail || "Rejection failed.");
+      throw err;
     }
   };
 
@@ -105,15 +107,16 @@ export default function ApplicationDetailPage() {
   const isAssignedVerifier = inspection?.assigned_to_id === user?.id || user?.role === "ADMIN" || user?.role === "LMO";
 
   return (
-    <div className="space-y-6">
+    <AuthGuard>
+    <div className="space-y-6 animate-fade-in">
       {/* Top Breadcrumb & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-lowest p-5 rounded-xl border border-surface-variant/40 shadow-xs">
         <div>
-          <Link href="/applications" className="text-xs font-semibold text-emerald-600 hover:underline">
+          <Link href="/applications" className="text-xs font-semibold text-secondary hover:underline">
             ← Back to Applications
           </Link>
           <div className="flex items-center gap-3 mt-1.5">
-            <h1 className="text-xl font-bold font-mono text-slate-900">{app.application_number}</h1>
+            <h1 className="text-xl font-bold font-mono text-on-surface">{app.application_number}</h1>
             <ApplicationStatusBadge status={app.status} size="md" />
           </div>
         </div>
@@ -125,7 +128,7 @@ export default function ApplicationDetailPage() {
           updatingStatus={updatingStatus}
           startingInspection={startingInspection}
           onReview={handleReview}
-          onRejectReview={handleRejectReview}
+          onRejectReview={() => setShowReject(true)}
           onOpenSchedule={() => setShowSchedule(true)}
           onOpenAssign={() => setShowAssign(true)}
           onStartInspection={handleStartInspection}
@@ -137,7 +140,7 @@ export default function ApplicationDetailPage() {
       </div>
 
       {actionError && (
-        <div className="rounded-lg bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700">{actionError}</div>
+        <div className="rounded-lg bg-error-container/10 border border-error/20 p-3 text-xs text-error">{actionError}</div>
       )}
 
       {/* Main Grid: Details + Timeline */}
@@ -149,26 +152,26 @@ export default function ApplicationDetailPage() {
           )}
 
           {/* Metadata */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs text-xs space-y-3">
-            <h3 className="text-sm font-semibold text-slate-900 border-b border-slate-100 pb-2">Application Details</h3>
+          <div className="rounded-xl border border-surface-variant/40 bg-surface-container-lowest p-5 shadow-xs text-xs space-y-3">
+            <h3 className="text-sm font-semibold text-on-surface border-b border-surface-variant/30 pb-2">Application Details</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <span className="text-slate-400 block">Instrument ID</span>
-                <span className="font-mono font-medium text-slate-800">INST-#{app.instrument_id}</span>
+                <span className="text-outline block">Instrument ID</span>
+                <span className="font-mono font-medium text-on-surface">INST-#{app.instrument_id}</span>
               </div>
               <div>
-                <span className="text-slate-400 block">Application Type</span>
-                <span className="font-medium text-slate-800">{app.application_type}</span>
+                <span className="text-outline block">Application Type</span>
+                <span className="font-medium text-on-surface">{app.application_type}</span>
               </div>
               <div>
-                <span className="text-slate-400 block">Submitted At</span>
-                <span className="font-medium text-slate-800">
+                <span className="text-outline block">Submitted At</span>
+                <span className="font-medium text-on-surface">
                   {app.submitted_at ? new Date(app.submitted_at).toLocaleString() : "Draft"}
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block">Remarks</span>
-                <span className="text-slate-700">{app.remarks || "—"}</span>
+                <span className="text-outline block">Remarks</span>
+                <span className="text-on-surface-variant">{app.remarks || "—"}</span>
               </div>
             </div>
           </div>
@@ -242,6 +245,17 @@ export default function ApplicationDetailPage() {
           }}
         />
       )}
+
+      {showReject && (
+        <RejectModal
+          isOpen={showReject}
+          applicationNumber={app.application_number}
+          onClose={() => setShowReject(false)}
+          onConfirm={handleRejectConfirm}
+          isLoading={updatingStatus}
+        />
+      )}
     </div>
+    </AuthGuard>
   );
 }

@@ -11,7 +11,8 @@ const getInitialToken = (): string | null => {
 const initialState: AuthState = {
   user: null,
   token: getInitialToken(),
-  isAuthenticated: !!getInitialToken(),
+  isAuthenticated: false,
+  isInitialized: false,
 };
 
 export const authSlice = createSlice({
@@ -25,6 +26,7 @@ export const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.isAuthenticated = true;
+      state.isInitialized = true;
       if (typeof window !== "undefined") {
         localStorage.setItem("metrix_token", action.payload.token);
       }
@@ -32,17 +34,23 @@ export const authSlice = createSlice({
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
       state.isAuthenticated = true;
+      state.isInitialized = true;
     },
     logout: (state) => {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
+      state.isInitialized = true;
       if (typeof window !== "undefined") {
         localStorage.removeItem("metrix_token");
       }
     },
+    markInitialized: (state) => {
+      state.isInitialized = true;
+    },
   },
 });
 
-export const { setCredentials, setUser, logout } = authSlice.actions;
+export const { setCredentials, setUser, logout, markInitialized } =
+  authSlice.actions;
 export default authSlice.reducer;

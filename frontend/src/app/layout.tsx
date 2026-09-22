@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { StoreProvider } from "@/store/StoreProvider";
-import { HeaderNav } from "@/components/layout/HeaderNav";
+import { AuthInitializer } from "@/components/auth/AuthInitializer";
+import { TopBanner } from "@/components/layout/TopBanner";
+import { AppHeader } from "@/components/layout/AppHeader";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "METRIX | Legal Metrology Online Verification System",
-  description: "Online Verification and Digital Certification System for Weighing and Measuring Instruments (SIH26036)",
+  description:
+    "National Metrological Surveillance Network • Online Verification & Digital Certification System (SIH26036)",
 };
 
 export default function RootLayout({
@@ -15,39 +18,31 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased min-h-screen flex flex-col bg-slate-50 text-slate-900">
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+        />
+      </head>
+      <body className="antialiased min-h-screen flex flex-col bg-surface text-on-surface">
         <StoreProvider>
-          <header className="border-b border-slate-200 bg-white sticky top-0 z-10 shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="h-9 w-9 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                  M
-                </div>
-                <div>
-                  <span className="font-bold text-xl tracking-tight text-slate-900">METRIX</span>
-                  <span className="ml-2 text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                    SIH26036
-                  </span>
-                </div>
+          <AuthInitializer>
+            <TopBanner />
+            <AppHeader />
+            <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              {children}
+            </main>
+            <footer className="border-t border-surface-variant/40 bg-surface-container-lowest py-6 text-center text-xs text-on-surface-variant">
+              <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+                <span>
+                  METRIX &copy; {new Date().getFullYear()} Directorate of Legal Metrology, Government of India.
+                </span>
+                <span className="font-mono text-[11px] text-tertiary font-medium">
+                  Standard Weights &amp; Measures Enforcement Framework (SIH26036)
+                </span>
               </div>
-              <div className="flex items-center space-x-6">
-                <div className="text-xs text-slate-500 hidden md:block">
-                  Legal Metrology Verification Platform
-                </div>
-                <HeaderNav />
-              </div>
-            </div>
-          </header>
-
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {children}
-          </main>
-
-          <footer className="border-t border-slate-200 bg-white py-6 text-center text-sm text-slate-500">
-            <div className="max-w-7xl mx-auto px-4">
-              METRIX &copy; {new Date().getFullYear()} - Online Verification System for Weighing & Measuring Instruments
-            </div>
-          </footer>
+            </footer>
+          </AuthInitializer>
         </StoreProvider>
       </body>
     </html>

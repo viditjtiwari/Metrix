@@ -2,6 +2,9 @@
 
 import React, { useState } from "react";
 import { useAssignVerifierMutation, useGetVerifiersQuery } from "./applicationApi";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
 
 interface AssignModalProps {
   applicationId: number;
@@ -47,76 +50,59 @@ export function AssignModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 className="text-base font-semibold text-slate-900">
-            Assign Officer / Test Centre
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition"
-          >
-            ✕
-          </button>
-        </div>
+  const verifierOptions = [
+    { value: "", label: "-- Choose an Officer or Test Centre --" },
+    ...verifiers.map((v) => ({
+      value: String(v.id),
+      label: `${v.full_name} (${v.role}) - ${v.email}`,
+    })),
+  ];
 
+  return (
+    <Modal
+      title="Assign Officer / Test Centre"
+      subtitle={`Application #${applicationId}`}
+      onClose={onClose}
+      size="sm"
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            isLoading={isLoading}
+            disabled={!assignedToId}
+          >
+            Confirm Assignment
+          </Button>
+        </div>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
         {errorMsg && (
-          <div className="mt-4 rounded-lg bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700">
+          <div className="rounded-xl bg-error-container p-3 text-xs text-on-error-container">
             {errorMsg}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4 text-xs">
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Select Verifier (LMO / GATC) *
-            </label>
-            {loadingVerifiers ? (
-              <div className="text-slate-500 py-2">Loading available officers...</div>
-            ) : (
-              <select
-                required
-                value={assignedToId}
-                onChange={(e) =>
-                  setAssignedToId(
-                    e.target.value ? Number(e.target.value) : ""
-                  )
-                }
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-              >
-                <option value="">-- Choose an Officer or Test Centre --</option>
-                {verifiers.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.full_name} ({v.role}) - {v.email}
-                  </option>
-                ))}
-              </select>
-            )}
-            <p className="mt-1.5 text-[11px] text-slate-500">
-              Only Legal Metrology Officers (LMO) and Government Approved Test Centres (GATC) are eligible.
-            </p>
+        {loadingVerifiers ? (
+          <div className="text-on-surface-variant text-xs py-2">
+            Loading available officers...
           </div>
-
-          <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading || !assignedToId}
-              className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition disabled:opacity-50"
-            >
-              {isLoading ? "Assigning..." : "Assign Verifier"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        ) : (
+          <Select
+            label="Select Verifier (LMO / GATC) *"
+            value={assignedToId ? String(assignedToId) : ""}
+            onChange={(e) =>
+              setAssignedToId(e.target.value ? Number(e.target.value) : "")
+            }
+            options={verifierOptions}
+            helperText="Only Legal Metrology Officers (LMO) and Government Approved Test Centres (GATC) are eligible."
+          />
+        )}
+      </form>
+    </Modal>
   );
 }
