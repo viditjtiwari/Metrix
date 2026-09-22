@@ -8,6 +8,7 @@ from app.schemas.admin import (
     AdminUserCreate,
     UserListItem,
     UserListResponse,
+    UserRoleUpdate,
     UserStatusUpdate,
 )
 from app.services.admin_service import admin_service
@@ -73,6 +74,27 @@ def update_user_status(
         db,
         user_id=user_id,
         is_active=status_in.is_active,
+        current_admin=current_admin,
+    )
+
+
+@router.patch(
+    "/users/{user_id}/role",
+    response_model=UserListItem,
+    status_code=status.HTTP_200_OK,
+    summary="Change User Role (Admin Only)",
+)
+def update_user_role(
+    user_id: int,
+    role_in: UserRoleUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_role(UserRole.ADMIN)),
+) -> UserListItem:
+    """Change the role of a user account."""
+    return admin_service.update_user_role(
+        db,
+        user_id=user_id,
+        new_role=role_in.role,
         current_admin=current_admin,
     )
 

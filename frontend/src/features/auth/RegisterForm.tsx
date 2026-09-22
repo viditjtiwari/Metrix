@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { useRegisterMutation, useLoginMutation } from "./authApi";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "./authSlice";
-import { UserRole } from "@/types";
 
 interface RegisterFormProps {
   onSuccess: (registeredEmail: string) => void;
@@ -19,7 +18,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<UserRole>("INSTRUMENT_OWNER");
+
 
   // Stakeholder details (optional for general, but typical for owners)
   const [includeProfile, setIncludeProfile] = useState(false);
@@ -41,7 +40,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       email,
       password,
       full_name: fullName,
-      role,
+      role: "INSTRUMENT_OWNER" as const,
       ...(includeProfile && {
         profile: {
           business_name: businessName,
@@ -89,36 +88,22 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-            Full Name
-          </label>
-          <input
-            type="text"
-            required
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder="Rajesh Verma"
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-          />
-        </div>
+      <div>
+        <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+          Full Name
+        </label>
+        <input
+          type="text"
+          required
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          placeholder="Rajesh Verma"
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+        />
+      </div>
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-            Role
-          </label>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as UserRole)}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-          >
-            <option value="INSTRUMENT_OWNER">Instrument Owner / Business</option>
-            <option value="LMO">Legal Metrology Officer (LMO)</option>
-            <option value="GATC">Test Centre (GATC)</option>
-            <option value="ADMIN">System Administrator</option>
-          </select>
-        </div>
+      <div className="p-2.5 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg">
+        📋 You will be registered as an <span className="font-semibold text-emerald-700">Instrument Owner</span>. Contact an admin if you need a different role.
       </div>
 
       <div>

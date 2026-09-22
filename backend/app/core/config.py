@@ -60,5 +60,22 @@ class Settings(BaseSettings):
     PUBLIC_VERIFICATION_BASE_URL: str = "http://localhost:3000/verify"
     CERTIFICATE_STORAGE_DIR: str = str(_BACKEND_DIR / "storage" / "certificates")
 
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = "http://localhost:3000/auth/google/callback"
+
+    # SMTP (for OTP emails)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_SECURE: bool = False
+    SMTP_USER: str = ""
+    SMTP_PASS: str = ""
+    SMTP_FROM: str = ""
+
+    # OTP Settings
+    OTP_EXPIRE_MINUTES: int = 5
+    OTP_LENGTH: int = 6
+
 
 settings = Settings()

@@ -33,7 +33,7 @@ class StakeholderProfileResponse(BaseModel):
 
 
 class UserCreate(BaseModel):
-    """Schema for user registration."""
+    """Schema for user registration. Role is always INSTRUMENT_OWNER for public."""
     email: str = Field(..., min_length=5, max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     password: str = Field(..., min_length=6, max_length=100)
     full_name: str = Field(..., min_length=2, max_length=255)
@@ -50,6 +50,7 @@ class UserResponse(BaseModel):
     full_name: str
     role: UserRole
     is_active: bool
+    auth_provider: str = "local"
     profile: Optional[StakeholderProfileResponse] = None
     created_at: datetime
     updated_at: datetime
@@ -84,3 +85,28 @@ class PasswordChangeRequest(BaseModel):
     """Schema for authenticated password change."""
     current_password: str = Field(..., min_length=6)
     new_password: str = Field(..., min_length=6, max_length=100)
+
+
+# --- OTP Login Schemas ---
+
+class OTPSendRequest(BaseModel):
+    """Schema for requesting an OTP to be sent to an email."""
+    email: str = Field(..., min_length=5, max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+class OTPVerifyRequest(BaseModel):
+    """Schema for verifying an OTP code."""
+    email: str = Field(..., min_length=5, max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    otp_code: str = Field(..., min_length=6, max_length=6)
+
+
+# --- Google OAuth Schemas ---
+
+class GoogleAuthRequest(BaseModel):
+    """Schema for exchanging Google authorization code for JWT."""
+    code: str = Field(..., description="Authorization code from Google OAuth redirect")
+
+
+class GoogleAuthURLResponse(BaseModel):
+    """Schema for returning the Google OAuth consent URL."""
+    auth_url: str

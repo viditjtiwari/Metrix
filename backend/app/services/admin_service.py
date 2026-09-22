@@ -83,5 +83,29 @@ class AdminService:
         db.refresh(new_user)
         return UserListItem.model_validate(new_user)
 
+    def update_user_role(
+        self,
+        db: Session,
+        user_id: int,
+        new_role: UserRole,
+        current_admin: User,
+    ) -> UserListItem:
+        """Change a user's role. Admins cannot change their own role."""
+        if user_id == current_admin.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Administrators cannot change their own role",
+            )
+        user = user_repository.get_by_id(db, user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with id {user_id} not found",
+            )
+        user_repository.update_user(db, user_id, role=new_role)
+        db.commit()
+        refreshed = user_repository.get_by_id(db, user_id)
+        return UserListItem.model_validate(refreshed)
+
 
 admin_service = AdminService()

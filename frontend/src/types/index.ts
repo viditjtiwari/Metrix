@@ -48,6 +48,7 @@ export interface User {
   full_name: string;
   role: UserRole;
   is_active: boolean;
+  auth_provider?: string;
   profile?: StakeholderProfile | null;
   created_at: string;
   updated_at: string;
@@ -84,6 +85,30 @@ export interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+}
+
+// OTP Login
+export interface OTPSendRequest {
+  email: string;
+}
+
+export interface OTPVerifyRequest {
+  email: string;
+  otp_code: string;
+}
+
+// Google OAuth
+export interface GoogleAuthRequest {
+  code: string;
+}
+
+export interface GoogleAuthURLResponse {
+  auth_url: string;
+}
+
+// Admin Role Update
+export interface UserRoleUpdateRequest {
+  role: UserRole;
 }
 
 export interface StatusHistoryResponse {
