@@ -1,6 +1,6 @@
 from datetime import date, datetime
-from typing import List, Optional
-from sqlalchemy import select
+from typing import List, Optional, Tuple
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 from app.models.enums import InspectionResult
 from app.models.inspection import Inspection, InspectionObservation
@@ -139,6 +139,51 @@ class InspectionRepository:
             .order_by(InspectionObservation.created_at.asc())
         )
         return list(db.execute(stmt).scalars().all())
+
+    def search(
+        self,
+        db: Session,
+        *,
+        verifier_id: Optional[int] = None,
+        application_id: Optional[int] = None,
+        result: Optional[InspectionResult] = None,
+        scheduled_date_from: Optional[date] = None,
+        scheduled_date_to: Optional[date] = None,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> Tuple[List[Inspection], int]:
+        filters = []
+        if verifier_id is not None:
+            filters.append(Inspection.assigned_to_id == verifier_id)
+        if application_id is not None:
+            filters.append(Inspection.application_id == application_id)
+        if result is not None:
+            filters.append(Inspection.result == result)
+        if scheduled_date_from is not None:
+            filters.append(Inspection.scheduled_date >= scheduled_date_from)
+        if scheduled_date_to is not None:
+            filters.append(Inspection.scheduled_date <= scheduled_date_to)
+
+        count_stmt = select(func.count(Inspection.id))
+        if filters:
+            count_stmt = count_stmt.where(*filters)
+        total = db.execute(count_stmt).scalar_one()
+
+        stmt = (
+            select(Inspection)
+            .options(
+                selectinload(Inspection.observations),
+                selectinload(Inspection.assigned_to),
+                selectinload(Inspection.application),
+            )
+            .order_by(Inspection.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        if filters:
+            stmt = stmt.where(*filters)
+        items = list(db.execute(stmt).scalars().all())
+        return items, total
 
 
 inspection_repository = InspectionRepository()

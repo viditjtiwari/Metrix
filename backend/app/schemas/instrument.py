@@ -14,6 +14,13 @@ class InstrumentCreate(BaseModel):
     location: str = Field(..., min_length=3, max_length=255)
 
 
+class InstrumentUpdate(BaseModel):
+    """Schema for updating an existing instrument."""
+    model_name: Optional[str] = Field(None, min_length=1, max_length=128)
+    capacity: Optional[str] = Field(None, max_length=64)
+    location: Optional[str] = Field(None, min_length=3, max_length=255)
+
+
 class InstrumentResponse(BaseModel):
     """Schema for instrument details response."""
     model_config = ConfigDict(from_attributes=True)

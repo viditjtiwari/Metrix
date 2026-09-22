@@ -46,13 +46,14 @@ The METRIX documentation is structured into four clearly separated operational l
 | **09** | [09-expiry-and-reverification.md](09-expiry-and-reverification.md) | `valid_until` truth, 30-day warning, ACTIVE/EXPIRED, non-destructive re-verification |
 | **10** | [10-notifications.md](10-notifications.md) | In-app notification model, 9 event triggers, read tracking, alert deduplication |
 | **11** | [11-dashboard-search-reporting.md](11-dashboard-search-reporting.md) | Role telemetry dashboards, multi-domain search, 5 CSV streaming exports |
-| **12** | [12-api-reference.md](12-api-reference.md) | Comprehensive catalog for all 38 REST endpoints across 9 routers |
-| **13** | [13-frontend.md](13-frontend.md) | Next.js 14 App Router, Redux RTK Query, 10 compiled routes, feature dialogs |
+| **12** | [12-api-reference.md](12-api-reference.md) | Comprehensive catalog for all 44 REST endpoints across 10 routers |
+| **13** | [13-frontend.md](13-frontend.md) | Next.js 14 App Router, Redux RTK Query, 16 compiled routes, design system, feature dialogs |
 | **14** | [14-security-and-data-isolation.md](14-security-and-data-isolation.md) | STRIDE threat model, IDOR defenses, GATC scoping, zero-secrets policy |
-| **15** | [15-testing-and-validation.md](15-testing-and-validation.md) | 45 passing backend tests, frontend type/build checks, fresh migration audit |
+| **15** | [15-testing-and-validation.md](15-testing-and-validation.md) | 50 passing backend tests, frontend type/build checks, fresh migration audit |
 | **16** | [16-development-and-local-setup.md](16-development-and-local-setup.md) | Local prerequisites, venv, migrations, demo account seed script, test commands |
 | **17** | [17-deployment-and-environment.md](17-deployment-and-environment.md) | Bare-metal deployment, `.env` reference, process management, production checklist |
 | **18** | [18-project-rules.md](18-project-rules.md) | Engineering rules summary, line limits (500/300), rule protection policy |
+| **19** | [19-developer-guide.md](19-developer-guide.md) | Onboarding guide, changelog, frontend architecture, and backend gaps reference |
 
 ---
 

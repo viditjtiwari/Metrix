@@ -35,6 +35,11 @@ export const instrumentApi = baseApi.injectEndpoints({
       providesTags: ["Instruments"],
     }),
 
+    getInstrument: builder.query<Instrument, number>({
+      query: (id) => `/instruments/${id}`,
+      providesTags: (_res, _err, id) => [{ type: "Instruments", id }],
+    }),
+
     createInstrument: builder.mutation<Instrument, InstrumentCreateRequest>({
       query: (data) => ({
         url: "/instruments",
@@ -43,7 +48,41 @@ export const instrumentApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Instruments"],
     }),
+
+    updateInstrument: builder.mutation<
+      Instrument,
+      { id: number; data: Partial<InstrumentCreateRequest> }
+    >({
+      query: ({ id, data }) => ({
+        url: `/instruments/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: "Instruments", id },
+        "Instruments",
+      ],
+    }),
+
+    deactivateInstrument: builder.mutation<Instrument, number>({
+      query: (id) => ({
+        url: `/instruments/${id}/deactivate`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (_res, _err, id) => [
+        { type: "Instruments", id },
+        "Instruments",
+      ],
+    }),
   }),
 });
 
-export const { useSearchInstrumentsQuery, useCreateInstrumentMutation } = instrumentApi;
+export const {
+  useSearchInstrumentsQuery,
+  useGetInstrumentQuery,
+  useCreateInstrumentMutation,
+  useUpdateInstrumentMutation,
+  useDeactivateInstrumentMutation,
+} = instrumentApi;
+
+export const useListInstrumentsQuery = instrumentApi.endpoints.searchInstruments.useQuery;

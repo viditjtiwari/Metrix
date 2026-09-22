@@ -73,3 +73,18 @@ class InspectionDetailResponse(InspectionResponse):
     observations: List[ObservationResponse] = []
     assigned_to_name: Optional[str] = None
     assigned_to_role: Optional[str] = None
+
+
+class InspectionListItem(InspectionResponse):
+    """Schema for inspection item in list view with verifier name and application number."""
+    assigned_to_name: Optional[str] = None
+    assigned_to_role: Optional[str] = None
+    application_number: Optional[str] = None
+
+
+class InspectionListResponse(BaseModel):
+    """Paginated list of inspections."""
+    items: List[InspectionListItem]
+    total: int
+    page: int
+    page_size: int

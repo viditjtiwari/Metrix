@@ -244,3 +244,20 @@ def get_application_certificate(
         db, application_id=application_id, current_user=current_user
     )
 
+
+@router.delete(
+    "/{application_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Delete Draft Application",
+)
+def delete_application(
+    application_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete an application in DRAFT status."""
+    application_service.delete_application(
+        db, application_id=application_id, current_user=current_user
+    )
+    return {"success": True, "message": f"Draft application {application_id} deleted successfully."}
+

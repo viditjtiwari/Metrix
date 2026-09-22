@@ -13,13 +13,14 @@ Testing adheres strictly to the core principle: **No untested claims.** Every re
 
 ---
 
-## 2. Automated Backend Test Suite (45 Passed)
+## 2. Automated Backend Test Suite (50 Passed)
 
-The Pytest test suite consists of **45 automated tests** executing across nine dedicated test modules in `backend/tests/`. All 45 tests pass cleanly in ~42 seconds:
+The Pytest test suite consists of **50 automated tests** executing across ten dedicated test modules in `backend/tests/`. All 50 tests pass cleanly in ~30 seconds:
 
 | Test Module | Tests | Test Objectives & Scenarios Validated |
 | :--- | :---: | :--- |
 | `test_auth.py` | 8 | Password hashing/verification, user registration with profile, duplicate prevention, valid/invalid logins, `/auth/me` security. |
+| `test_backend_gaps.py` | 5 | Admin user management, official provisioning, status toggle, profile update, password change, and draft application deletion. |
 | `test_certificates.py` | 5 | Issuance lifecycle, public QR lookup endpoint, dynamic expiry evaluation, ReportLab PDF rendering, role authorization. |
 | `test_dashboard_and_reports.py`| 8 | Role-specific dashboard aggregations (Owner, LMO, GATC, Admin), CSV data streaming for applications, instruments, and expiries. |
 | `test_domain.py` | 4 | Instrument ownership assignment, verification application creation, valid status transitions, illegal status rejection. |
@@ -29,7 +30,7 @@ The Pytest test suite consists of **45 automated tests** executing across nine d
 | `test_phase6_hardening.py` | 4 | Rejection of invalid status jumps, cross-owner IDOR protection, GATC access scoping, non-destructive re-verification audit preservation. |
 | `test_rbac.py` | 4 | Role permission boundaries: instrument registration, application reviews, and unauthorized action rejections. |
 
-**Total Backend Suite Result**: `45 passed in ~42.00s`
+**Total Backend Suite Result**: `50 passed in ~30.13s`
 
 ---
 
@@ -44,7 +45,7 @@ The Pytest test suite consists of **45 automated tests** executing across nine d
    ```bash
    cd frontend && npm run build
    ```
-   Result: **Compiled successfully across all 10 application routes** (`/`, `/_not-found`, `/applications`, `/applications/[id]`, `/dashboard`, `/login`, `/notifications`, `/reports`, `/search`, `/verify/[token]`).
+   Result: **Compiled successfully across all 16 application routes** (`/`, `/_not-found`, `/admin/system`, `/admin/users`, `/applications`, `/applications/[id]`, `/certificates`, `/certificates/[id]`, `/dashboard`, `/inspections`, `/instruments`, `/instruments/[id]`, `/login`, `/notifications`, `/profile`, `/reports`, `/search`, `/verify/[token]`).
 
 ---
 

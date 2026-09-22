@@ -18,6 +18,7 @@ interface ApplicationActionBarProps {
   onOpenResult: () => void;
   onOpenIssueCert: () => void;
   onSubmitDraft?: () => void;
+  onDeleteDraft?: () => void;
 }
 
 export const ApplicationActionBar: React.FC<ApplicationActionBarProps> = ({
@@ -35,20 +36,33 @@ export const ApplicationActionBar: React.FC<ApplicationActionBarProps> = ({
   onOpenResult,
   onOpenIssueCert,
   onSubmitDraft,
+  onDeleteDraft,
 }) => {
   const isOfficerOrAdmin = user?.role === "LMO" || user?.role === "ADMIN";
   const isOwnerOrAdmin = user?.role === "INSTRUMENT_OWNER" || user?.role === "ADMIN" || user?.id === app.applicant_id;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {app.status === "DRAFT" && isOwnerOrAdmin && onSubmitDraft && (
-        <button
-          onClick={onSubmitDraft}
-          disabled={updatingStatus}
-          className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
-        >
-          Submit Application
-        </button>
+      {app.status === "DRAFT" && isOwnerOrAdmin && (
+        <>
+          {onSubmitDraft && (
+            <button
+              onClick={onSubmitDraft}
+              disabled={updatingStatus}
+              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
+            >
+              Submit Application
+            </button>
+          )}
+          {onDeleteDraft && (
+            <button
+              onClick={onDeleteDraft}
+              className="px-3.5 py-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 text-xs font-semibold transition"
+            >
+              Delete Draft
+            </button>
+          )}
+        </>
       )}
 
       {app.status === "SUBMITTED" && isOfficerOrAdmin && (

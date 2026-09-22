@@ -162,6 +162,14 @@ export const applicationApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Applications"],
     }),
+
+    deleteApplication: builder.mutation<{ success: boolean; message?: string }, number>({
+      query: (id) => ({
+        url: `/applications/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Applications"],
+    }),
   }),
 });
 
@@ -178,4 +186,7 @@ export const {
   useAddObservationMutation,
   useGetObservationsQuery,
   useSubmitInspectionResultMutation,
+  useDeleteApplicationMutation,
 } = applicationApi;
+
+export const useListApplicationsQuery = applicationApi.endpoints.getApplications.useQuery;

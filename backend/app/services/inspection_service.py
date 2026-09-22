@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -9,9 +9,12 @@ from app.repositories.application_repository import application_repository
 from app.repositories.inspection_repository import inspection_repository
 from app.repositories.user_repository import user_repository
 from app.services.notification_service import notification_service
+from app.services.observation_service import observation_service, to_detail_response
 from app.schemas.inspection import (
     AssignmentRequest,
     InspectionDetailResponse,
+    InspectionListItem,
+    InspectionListResponse,
     InspectionResponse,
     InspectionResultUpdate,
     ObservationCreate,
@@ -27,33 +30,7 @@ class InspectionService:
     """
 
     def _to_detail_response(self, inspection: Inspection) -> InspectionDetailResponse:
-        observations_data = [
-            ObservationResponse.model_validate(obs) for obs in inspection.observations
-        ]
-        assigned_to_name = (
-            inspection.assigned_to.full_name if inspection.assigned_to else None
-        )
-        assigned_to_role = (
-            inspection.assigned_to.role.value if inspection.assigned_to else None
-        )
-        return InspectionDetailResponse(
-            id=inspection.id,
-            application_id=inspection.application_id,
-            assigned_to_id=inspection.assigned_to_id,
-            scheduled_date=inspection.scheduled_date,
-            scheduled_time=inspection.scheduled_time,
-            inspection_location=inspection.inspection_location,
-            scheduling_remarks=inspection.scheduling_remarks,
-            started_at=inspection.started_at,
-            completed_at=inspection.completed_at,
-            result=inspection.result,
-            result_remarks=inspection.result_remarks,
-            created_at=inspection.created_at,
-            updated_at=inspection.updated_at,
-            observations=observations_data,
-            assigned_to_name=assigned_to_name,
-            assigned_to_role=assigned_to_role,
-        )
+        return to_detail_response(inspection)
 
     def schedule_inspection(
         self,
@@ -319,44 +296,12 @@ class InspectionService:
         observation_in: ObservationCreate,
         current_user: User,
     ) -> ObservationResponse:
-        inspection = inspection_repository.get_by_id(db, inspection_id)
-        if not inspection:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Inspection with id {inspection_id} not found.",
-            )
-
-        if current_user.role == UserRole.INSTRUMENT_OWNER:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Instrument owners cannot record observations.",
-            )
-
-        if current_user.role == UserRole.GATC and inspection.assigned_to_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only record observations for inspections assigned to you.",
-            )
-
-        if inspection.application.status != ApplicationStatus.INSPECTION_IN_PROGRESS:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Observations can only be recorded when INSPECTION_IN_PROGRESS (current: '{inspection.application.status.value}').",
-            )
-
-        obs = inspection_repository.add_observation(
+        return observation_service.add_observation(
             db,
             inspection_id=inspection_id,
-            parameter_name=observation_in.parameter_name.strip(),
-            observed_value=observation_in.observed_value.strip(),
-            standard_value=observation_in.standard_value.strip() if observation_in.standard_value else None,
-            unit=observation_in.unit.strip() if observation_in.unit else None,
-            is_passed=observation_in.is_passed,
-            remarks=observation_in.remarks.strip() if observation_in.remarks else None,
+            observation_in=observation_in,
+            current_user=current_user,
         )
-        db.commit()
-        db.refresh(obs)
-        return ObservationResponse.model_validate(obs)
 
     def list_observations(
         self,
@@ -365,21 +310,69 @@ class InspectionService:
         inspection_id: int,
         current_user: User,
     ) -> List[ObservationResponse]:
-        inspection = inspection_repository.get_by_id(db, inspection_id)
-        if not inspection:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Inspection with id {inspection_id} not found.",
-            )
+        return observation_service.list_observations(
+            db,
+            inspection_id=inspection_id,
+            current_user=current_user,
+        )
 
-        if current_user.role == UserRole.INSTRUMENT_OWNER and inspection.application.applicant_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to view observations for this inspection.",
-            )
+    def list_inspections(
+        self,
+        db: Session,
+        current_user: User,
+        *,
+        verifier_id: Optional[int] = None,
+        application_id: Optional[int] = None,
+        result: Optional[InspectionResult] = None,
+        scheduled_date_from: Optional[date] = None,
+        scheduled_date_to: Optional[date] = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> InspectionListResponse:
+        effective_verifier_id = verifier_id
+        if current_user.role in [UserRole.LMO, UserRole.GATC]:
+            effective_verifier_id = current_user.id if verifier_id is None else verifier_id
 
-        observations = inspection_repository.list_observations(db, inspection_id)
-        return [ObservationResponse.model_validate(obs) for obs in observations]
+        skip = max(0, (page - 1) * page_size)
+        items, total = inspection_repository.search(
+            db,
+            verifier_id=effective_verifier_id,
+            application_id=application_id,
+            result=result,
+            scheduled_date_from=scheduled_date_from,
+            scheduled_date_to=scheduled_date_to,
+            skip=skip,
+            limit=page_size,
+        )
+
+        list_items = [
+            InspectionListItem(
+                id=insp.id,
+                application_id=insp.application_id,
+                assigned_to_id=insp.assigned_to_id,
+                scheduled_date=insp.scheduled_date,
+                scheduled_time=insp.scheduled_time,
+                inspection_location=insp.inspection_location,
+                scheduling_remarks=insp.scheduling_remarks,
+                started_at=insp.started_at,
+                completed_at=insp.completed_at,
+                result=insp.result,
+                result_remarks=insp.result_remarks,
+                created_at=insp.created_at,
+                updated_at=insp.updated_at,
+                assigned_to_name=insp.assigned_to.full_name if insp.assigned_to else None,
+                assigned_to_role=insp.assigned_to.role.value if insp.assigned_to else None,
+                application_number=insp.application.application_number if insp.application else None,
+            )
+            for insp in items
+        ]
+
+        return InspectionListResponse(
+            items=list_items,
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
 
     def record_result(
         self,

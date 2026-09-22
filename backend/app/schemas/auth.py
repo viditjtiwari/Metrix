@@ -66,3 +66,21 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class ProfileUpdate(BaseModel):
+    """Schema for updating user personal and business profile."""
+    full_name: Optional[str] = Field(None, min_length=2, max_length=255)
+    business_name: Optional[str] = Field(None, min_length=2, max_length=255)
+    trade_license_number: Optional[str] = Field(None, max_length=100)
+    contact_phone: Optional[str] = Field(None, min_length=7, max_length=20)
+    address_line: Optional[str] = Field(None, min_length=3, max_length=255)
+    city: Optional[str] = Field(None, min_length=2, max_length=100)
+    state: Optional[str] = Field(None, min_length=2, max_length=100)
+    pincode: Optional[str] = Field(None, min_length=4, max_length=10)
+
+
+class PasswordChangeRequest(BaseModel):
+    """Schema for authenticated password change."""
+    current_password: str = Field(..., min_length=6)
+    new_password: str = Field(..., min_length=6, max_length=100)

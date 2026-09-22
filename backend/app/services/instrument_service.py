@@ -8,7 +8,12 @@ from app.models.enums import InstrumentType, UserRole
 from app.models.instrument import Instrument
 from app.models.user import User
 from app.repositories.instrument_repository import instrument_repository
-from app.schemas.instrument import InstrumentCreate, InstrumentListResponse, InstrumentResponse
+from app.schemas.instrument import (
+    InstrumentCreate,
+    InstrumentListResponse,
+    InstrumentResponse,
+    InstrumentUpdate,
+)
 
 
 class InstrumentService:
@@ -102,6 +107,45 @@ class InstrumentService:
             page=page,
             page_size=page_size,
         )
+
+    def update_instrument(
+        self, db: Session, instrument_id: int, update_data: InstrumentUpdate, current_user: User
+    ) -> Instrument:
+        instrument = self.get_instrument(db, instrument_id, current_user)
+        if current_user.role == UserRole.INSTRUMENT_OWNER and instrument.owner_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to update this instrument.",
+            )
+        data_dict = update_data.model_dump(exclude_unset=True)
+        updated = instrument_repository.update(db, instrument_id, data_dict)
+        if not updated:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Instrument with id {instrument_id} not found.",
+            )
+        db.commit()
+        db.refresh(updated)
+        return updated
+
+    def deactivate_instrument(
+        self, db: Session, instrument_id: int, current_user: User
+    ) -> Instrument:
+        instrument = self.get_instrument(db, instrument_id, current_user)
+        if current_user.role == UserRole.INSTRUMENT_OWNER and instrument.owner_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to deactivate this instrument.",
+            )
+        deactivated = instrument_repository.deactivate(db, instrument_id)
+        if not deactivated:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Instrument with id {instrument_id} not found.",
+            )
+        db.commit()
+        db.refresh(deactivated)
+        return deactivated
 
 
 instrument_service = InstrumentService()

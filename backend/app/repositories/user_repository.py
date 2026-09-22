@@ -1,6 +1,7 @@
-from typing import List, Optional
-from sqlalchemy import select
+from typing import Any, Dict, List, Optional, Tuple
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
+from app.models.enums import UserRole
 from app.models.user import StakeholderProfile, User
 from app.schemas.auth import StakeholderProfileCreate
 
@@ -85,6 +86,77 @@ class UserRepository:
             .order_by(User.full_name.asc())
         )
         return list(db.execute(stmt).scalars().all())
+
+    def search(
+        self,
+        db: Session,
+        *,
+        query: Optional[str] = None,
+        role: Optional[UserRole] = None,
+        is_active: Optional[bool] = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> Tuple[List[User], int]:
+        filters = []
+        if query:
+            q = f"%{query.strip()}%"
+            filters.append(or_(User.email.ilike(q), User.full_name.ilike(q)))
+        if role:
+            filters.append(User.role == role)
+        if is_active is not None:
+            filters.append(User.is_active == is_active)
+
+        count_stmt = select(func.count(User.id))
+        if filters:
+            count_stmt = count_stmt.where(*filters)
+        total = db.execute(count_stmt).scalar() or 0
+
+        stmt = (
+            select(User)
+            .options(joinedload(User.profile))
+            .order_by(User.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        if filters:
+            stmt = stmt.where(*filters)
+        users = list(db.execute(stmt).scalars().all())
+        return users, total
+
+    def update_status(self, db: Session, user_id: int, is_active: bool) -> Optional[User]:
+        user = self.get_by_id(db, user_id)
+        if not user:
+            return None
+        user.is_active = is_active
+        db.flush()
+        return user
+
+    def update_user(self, db: Session, user_id: int, **kwargs: Any) -> Optional[User]:
+        user = self.get_by_id(db, user_id)
+        if not user:
+            return None
+        for key, value in kwargs.items():
+            if hasattr(user, key) and value is not None:
+                setattr(user, key, value)
+        db.flush()
+        return user
+
+    def update_profile(
+        self, db: Session, user_id: int, profile_dict: Dict[str, Any]
+    ) -> Optional[StakeholderProfile]:
+        user = self.get_by_id(db, user_id)
+        if not user:
+            return None
+        if not user.profile:
+            profile = StakeholderProfile(user_id=user_id, **profile_dict)
+            db.add(profile)
+        else:
+            profile = user.profile
+            for key, val in profile_dict.items():
+                if hasattr(profile, key) and val is not None:
+                    setattr(profile, key, val.strip() if isinstance(val, str) else val)
+        db.flush()
+        return profile
 
 
 user_repository = UserRepository()

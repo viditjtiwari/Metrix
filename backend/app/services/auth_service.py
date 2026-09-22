@@ -3,7 +3,14 @@ from sqlalchemy.orm import Session
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.models.user import User
 from app.repositories.user_repository import user_repository
-from app.schemas.auth import LoginRequest, TokenResponse, UserCreate, UserResponse
+from app.schemas.auth import (
+    LoginRequest,
+    PasswordChangeRequest,
+    ProfileUpdate,
+    TokenResponse,
+    UserCreate,
+    UserResponse,
+)
 
 
 class AuthService:
@@ -69,6 +76,38 @@ class AuthService:
                 detail="User not found.",
             )
         return user
+
+    def update_profile(
+        self, db: Session, current_user: User, profile_in: ProfileUpdate
+    ) -> User:
+        if profile_in.full_name is not None:
+            user_repository.update_user(
+                db, current_user.id, full_name=profile_in.full_name.strip()
+            )
+
+        profile_fields = {
+            k: v
+            for k, v in profile_in.model_dump(exclude_unset=True).items()
+            if k != "full_name" and v is not None
+        }
+        if profile_fields:
+            user_repository.update_profile(db, current_user.id, profile_fields)
+
+        db.commit()
+        refreshed = user_repository.get_by_id(db, current_user.id)
+        return refreshed
+
+    def change_password(
+        self, db: Session, current_user: User, password_in: PasswordChangeRequest
+    ) -> None:
+        if not verify_password(password_in.current_password, current_user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is incorrect.",
+            )
+        hashed = get_password_hash(password_in.new_password)
+        user_repository.update_user(db, current_user.id, hashed_password=hashed)
+        db.commit()
 
 
 auth_service = AuthService()

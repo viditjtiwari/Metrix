@@ -96,6 +96,13 @@ export const certificateApi = baseApi.injectEndpoints({
       },
       providesTags: ["Certificates"],
     }),
+
+    downloadCertificate: builder.mutation<Blob, number>({
+      query: (certificateId) => ({
+        url: `/certificates/${certificateId}/download`,
+        responseHandler: (response: Response) => response.blob(),
+      }),
+    }),
   }),
 });
 
@@ -107,4 +114,8 @@ export const {
   useSearchCertificatesQuery,
   useGetExpiringCertificatesQuery,
   useGetExpiredCertificatesQuery,
+  useDownloadCertificateMutation,
 } = certificateApi;
+
+export const useListExpiringCertificatesQuery = certificateApi.endpoints.getExpiringCertificates.useQuery;
+export const useListCertificatesQuery = certificateApi.endpoints.searchCertificates.useQuery;

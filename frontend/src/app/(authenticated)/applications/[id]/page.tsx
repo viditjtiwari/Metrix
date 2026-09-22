@@ -2,12 +2,13 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   useGetApplicationInspectionQuery,
   useGetApplicationQuery,
   useStartInspectionMutation,
   useUpdateApplicationStatusMutation,
+  useDeleteApplicationMutation,
 } from "@/features/applications/applicationApi";
 import { useGetApplicationCertificateQuery } from "@/features/certificates/certificateApi";
 import { ApplicationStatusBadge } from "@/features/applications/ApplicationStatusBadge";
@@ -24,6 +25,7 @@ import { IssueCertificateModal } from "@/features/certificates/IssueCertificateM
 import { useAppSelector } from "@/store/hooks";
 
 export default function ApplicationDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const applicationId = Number(params?.id);
   const { user } = useAppSelector((state) => state.auth);
@@ -51,6 +53,18 @@ export default function ApplicationDetailPage() {
 
   const [updateStatus, { isLoading: updatingStatus }] = useUpdateApplicationStatusMutation();
   const [startInspection, { isLoading: startingInspection }] = useStartInspectionMutation();
+  const [deleteApplication] = useDeleteApplicationMutation();
+
+  const handleDeleteDraft = async () => {
+    if (!confirm("Are you sure you want to permanently delete this draft application?")) return;
+    setActionError(null);
+    try {
+      await deleteApplication(applicationId).unwrap();
+      router.push("/applications");
+    } catch (err: unknown) {
+      setActionError((err as { data?: { detail?: string } })?.data?.detail || "Could not delete application.");
+    }
+  };
 
   const handleReview = async () => {
     setActionError(null);
@@ -133,6 +147,7 @@ export default function ApplicationDetailPage() {
           onOpenResult={() => setShowResult(true)}
           onOpenIssueCert={() => setShowIssueCert(true)}
           onSubmitDraft={handleSubmitDraft}
+          onDeleteDraft={handleDeleteDraft}
         />
       </div>
 

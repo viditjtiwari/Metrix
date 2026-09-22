@@ -239,5 +239,23 @@ class ApplicationService:
             page_size=page_size,
         )
 
+    def delete_application(
+        self, db: Session, application_id: int, current_user: User
+    ) -> bool:
+        app = self.get_application(db, application_id, current_user)
+        if app.status != ApplicationStatus.DRAFT:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Only draft applications can be deleted. Current status is {app.status.value}.",
+            )
+        if current_user.role == UserRole.INSTRUMENT_OWNER and app.applicant_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to delete this application.",
+            )
+        success = application_repository.delete(db, application_id)
+        db.commit()
+        return success
+
 
 application_service = ApplicationService()

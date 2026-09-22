@@ -8,6 +8,7 @@ from app.schemas.instrument import (
     InstrumentCreate,
     InstrumentListResponse,
     InstrumentResponse,
+    InstrumentUpdate,
 )
 from app.services.instrument_service import instrument_service
 
@@ -80,6 +81,46 @@ def get_instrument(
 ) -> InstrumentResponse:
     """Retrieve details of a registered instrument."""
     instrument = instrument_service.get_instrument(
+        db, instrument_id=instrument_id, current_user=current_user
+    )
+    return InstrumentResponse.model_validate(instrument)
+
+
+@router.patch(
+    "/{instrument_id}",
+    response_model=InstrumentResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update Instrument Details",
+)
+def update_instrument(
+    instrument_id: int,
+    instrument_in: InstrumentUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> InstrumentResponse:
+    """Update details of a registered instrument (location, capacity, model name)."""
+    instrument = instrument_service.update_instrument(
+        db,
+        instrument_id=instrument_id,
+        update_data=instrument_in,
+        current_user=current_user,
+    )
+    return InstrumentResponse.model_validate(instrument)
+
+
+@router.patch(
+    "/{instrument_id}/deactivate",
+    response_model=InstrumentResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Deactivate Instrument",
+)
+def deactivate_instrument(
+    instrument_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> InstrumentResponse:
+    """Deactivate an instrument from the active registry."""
+    instrument = instrument_service.deactivate_instrument(
         db, instrument_id=instrument_id, current_user=current_user
     )
     return InstrumentResponse.model_validate(instrument)

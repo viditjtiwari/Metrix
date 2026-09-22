@@ -185,5 +185,13 @@ class ApplicationRepository:
         db.flush()
         return history
 
+    def delete(self, db: Session, application_id: int) -> bool:
+        app = self.get_by_id(db, application_id)
+        if not app:
+            return False
+        db.delete(app)
+        db.flush()
+        return True
+
 
 application_repository = ApplicationRepository()

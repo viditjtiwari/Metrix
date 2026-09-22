@@ -1,14 +1,16 @@
-from typing import List
-from fastapi import APIRouter, Depends, status
+from datetime import date
+from typing import List, Optional
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user, get_db, require_role
-from app.models.enums import UserRole
+from app.models.enums import InspectionResult, UserRole
 from app.models.user import User
 from app.repositories.inspection_repository import inspection_repository
 from app.repositories.user_repository import user_repository
 from app.schemas.auth import UserResponse
 from app.schemas.inspection import (
     InspectionDetailResponse,
+    InspectionListResponse,
     InspectionResultUpdate,
     ObservationCreate,
     ObservationResponse,
@@ -16,6 +18,37 @@ from app.schemas.inspection import (
 from app.services.inspection_service import inspection_service
 
 router = APIRouter(prefix="/inspections", tags=["Inspections"])
+
+
+@router.get(
+    "",
+    response_model=InspectionListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List and Filter Inspections",
+)
+def list_inspections(
+    verifier_id: Optional[int] = Query(None, description="Filter by assigned verifier"),
+    application_id: Optional[int] = Query(None, description="Filter by application ID"),
+    result: Optional[InspectionResult] = Query(None, description="Filter by outcome (VERIFIED, REJECTED)"),
+    scheduled_date_from: Optional[date] = Query(None, description="Scheduled on/after (YYYY-MM-DD)"),
+    scheduled_date_to: Optional[date] = Query(None, description="Scheduled on/before (YYYY-MM-DD)"),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Page size"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.LMO, UserRole.GATC, UserRole.ADMIN)),
+) -> InspectionListResponse:
+    """Retrieve inspections queue with date and status filters (LMO/GATC/Admin)."""
+    return inspection_service.list_inspections(
+        db,
+        current_user=current_user,
+        verifier_id=verifier_id,
+        application_id=application_id,
+        result=result,
+        scheduled_date_from=scheduled_date_from,
+        scheduled_date_to=scheduled_date_to,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.get(
