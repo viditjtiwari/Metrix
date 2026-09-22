@@ -97,5 +97,25 @@ class InstrumentRepository:
         db.flush()
         return instrument
 
+    def update(
+        self, db: Session, instrument_id: int, update_data: dict
+    ) -> Optional[Instrument]:
+        instrument = self.get_by_id(db, instrument_id)
+        if not instrument:
+            return None
+        for key, val in update_data.items():
+            if hasattr(instrument, key) and val is not None:
+                setattr(instrument, key, val.strip() if isinstance(val, str) else val)
+        db.flush()
+        return instrument
+
+    def deactivate(self, db: Session, instrument_id: int) -> Optional[Instrument]:
+        instrument = self.get_by_id(db, instrument_id)
+        if not instrument:
+            return None
+        instrument.is_active = False
+        db.flush()
+        return instrument
+
 
 instrument_repository = InstrumentRepository()

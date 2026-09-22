@@ -1,6 +1,6 @@
 # METRIX — Frontend Architecture & Route Structure
 
-> **Document Status**: CURRENT STATE (Post-Phase 6 Verified)  
+> **Document Status**: CURRENT STATE (Production-Ready 16-Route Architecture)  
 > **Master Index**: See [docs/DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md).
 
 ---
@@ -9,69 +9,93 @@
 
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript (strict type-checking with zero `tsc` errors)
-- **Styling**: Tailwind CSS with responsive layout grids
+- **Styling**: Vanilla Tailwind CSS with clean, professional light theme palette
+- **Color Palette**: Emerald (`#059669` primary), Slate (`#0F172A` text/slate-900, `#F8FAFC` background), White
 - **State Management**: Redux Toolkit (`@reduxjs/toolkit`, `react-redux`)
-- **Server Data Layer**: RTK Query (automated request deduplication, caching, and cache invalidation)
+- **Server Data Layer**: RTK Query (automated caching, polling, deduplication, cache tags)
 - **Iconography**: Lucide React icons
 
 ---
 
-## 2. Compiled Application Routes
+## 2. Compiled Application Routes (16 Routes)
 
-During the Phase 6 production build (`npm run build`), Next.js successfully compiled all application routes:
+All routes are compiled, type-checked, and statically/dynamically generated via `npm run build`:
 
-| Route Path | Rendering Mode | Purpose & Target Actors |
-| :--- | :--- | :--- |
-| `/` | Static (○) | Public landing page presenting system overview and statutory features |
-| `/_not-found` | Static (○) | User-friendly 404 error page |
-| `/login` | Static (○) | Dual authentication portal (Sign In and Account Registration) |
-| `/dashboard` | Static (○) | Role-adaptive dashboard rendering operational metrics for Owner/LMO/GATC/Admin |
-| `/applications` | Static (○) | Application workbench: lists verification requests with status filters |
-| `/applications/[id]`| Dynamic (ƒ) | Comprehensive application dossier: timeline, inspection details, observations |
-| `/notifications`| Static (○) | In-app notification center with read/unread filtering and mark-all-read |
-| `/search` | Static (○) | Global multi-domain search across instruments, applications, and certificates |
-| `/reports` | Static (○) | Operational reports center supporting role-scoped CSV downloads |
-| `/verify/[token]` | Dynamic (ƒ) | Public zero-login certificate verification portal with live QR validation |
+| Route Path | Rendering Mode | Access Scope | Purpose & Key Features |
+| :--- | :--- | :--- | :--- |
+| `/` | Static (○) | Public | Hero banner, 6-stage lifecycle explainer, direct QR lookup |
+| `/_not-found` | Static (○) | Public | Standard 404 recovery page |
+| `/login` | Static (○) | Public | Sign In/Registration with instant demo role account switcher |
+| `/verify/[token]` | Dynamic (ƒ) | Public | QR code certificate verification with SHA-256 integrity hash |
+| `/dashboard` | Static (○) | Authenticated | Dynamic role telemetry for Owner, LMO, GATC, and Admin |
+| `/instruments` | Static (○) | Authenticated | Equipment inventory, search, category filter, registration modal |
+| `/instruments/[id]` | Dynamic (ƒ) | Authenticated | Instrument dossier, verification history, edit & deactivation |
+| `/applications` | Static (○) | Authenticated | Verification application workbench with status filtering |
+| `/applications/[id]`| Dynamic (ƒ) | Authenticated | Complete verification state machine controls & draft deletion |
+| `/certificates` | Static (○) | Authenticated | Digital certificate registry with active/expiring/expired tabs |
+| `/certificates/[id]`| Dynamic (ƒ) | Authenticated | QR certificate preview, anti-tamper hash, ReportLab PDF download |
+| `/inspections` | Static (○) | LMO, GATC, Admin | Operational queue of assigned verifications and test deep-links |
+| `/profile` | Static (○) | Authenticated | Account details, contact editing, and secure password change |
+| `/admin/users` | Static (○) | Admin | User management, role filtering, active toggling, official provisioning |
+| `/admin/system` | Static (○) | Admin | Platform telemetry, database connection stats, audit & error stream |
+| `/reports` | Static (○) | Authenticated | Streaming regulatory CSV reports for instruments, apps, certificates |
+| `/search` | Static (○) | Authenticated | Cross-entity search across instruments, applications, certificates |
+| `/notifications` | Static (○) | Authenticated | In-app notification hub with read/unread filters & mark-all-read |
 
 ---
 
-## 3. State Management & Session Lifecycle
+## 3. Layout Shell & Authentication Guard
+
+The application utilizes a route group `src/app/(authenticated)/` with a unified layout shell:
 
 ```mermaid
 graph TD
-    subgraph "Browser Client"
-        LocalStore[("localStorage: metrix_token")] -->|"App Boot"| AuthInit["AuthInitializer Component"]
-        AuthInit -->|"Dispatch setCredentials"| AuthSlice["authSlice (Redux)"]
-        AuthSlice --> ReduxStore[("Redux Store")]
-    end
-
-    subgraph "RTK Query API Layer"
-        ReduxStore --> API["Base RTK Query API Client"]
-        API -->|"Authorization: Bearer <token>"| Backend["FastAPI Backend (/api/v1)"]
-    end
+    Root["Root Layout (AuthInitializer, ReduxProvider)"]
+    Root --> PublicRoutes["Public Routes (/, /login, /verify/[token])"]
+    Root --> AuthGroup["(authenticated) Route Group"]
+    AuthGroup --> AuthGuard["AuthGuard (Session & Token Check)"]
+    AuthGuard --> DashLayout["DashboardLayout"]
+    DashLayout --> Sidebar["Sidebar (Role-Filtered Navigation)"]
+    DashLayout --> TopBar["TopBar (Search, Notifications, Profile)"]
+    DashLayout --> PageContent["Page Views (Dashboard, Instruments, etc.)"]
 ```
 
-- **`AuthInitializer`**: Mounted at the root layout. Reads saved tokens from local storage on browser startup/refresh, verifies user session via `/auth/me`, and hydrates the Redux store without flicker.
-- **`authSlice`**: Stores the current user object, assigned role, and JWT access token. Provides typed selectors (`selectCurrentUser`, `selectIsAuthenticated`).
+- **`AuthGuard.tsx`**: Intercepts unauthenticated navigation, preserves attempted destination, and redirects to `/login`.
+- **`Sidebar.tsx`**: Role-adaptive navigation menu configured in `utils/roleConfig.ts`. Automatically hides administrative options from instrument owners.
+- **`TopBar.tsx`**: Displays current route breadcrumbs, quick global search shortcut, notification bell with periodic unread badge count, and user profile drawer.
 
 ---
 
-## 4. Feature Modals & Interactive Workflows
+## 4. Reusable UI Primitives (`src/components/ui/`)
 
-To prevent cluttered pages and preserve strict file line limits (≤ 300 lines per component), interactive actions are decomposed into modular feature dialogs:
-
-1. **`RegisterInstrumentModal`**: Owner form for registering a new instrument (make, model, serial number, location, capacity).
-2. **`CreateApplicationModal`**: Guided dialog allowing owners to select a registered instrument and submit an initial or re-verification application.
-3. **`ScheduleModal`**: Officer modal for setting inspection date, time slot, and location.
-4. **`AssignModal`**: Officer/Admin dialog for allocating an LMO or GATC verifier.
-5. **`AddObservationModal`**: Digital checklist modal for entering test parameter readings during an active inspection.
-6. **`InspectionResultModal`**: Officer modal for finalizing verification outcome (`VERIFIED` or `REJECTED`).
-7. **`IssueCertificateModal`**: Official certificate issuance modal generating PDF credentials.
+To ensure design consistency across all pages and enforce file size limits:
+1. **`StatusBadge.tsx`**: Consistent color-coded badges for Application, Instrument, and Certificate states.
+2. **`MetricCard.tsx`**: Standard card for KPI numbers, percentage changes, and contextual icons.
+3. **`DataTable.tsx`**: Generic, typed table component with empty states, loading skeletons, and pagination.
+4. **`EmptyState.tsx`**: Standard empty result visual with actionable CTA button.
+5. **`PageHeader.tsx`**: Standardized page title, descriptive subtitle, and primary action button.
+6. **`Modal.tsx`**: Accessible dialog overlay with header, body, and action footer.
+7. **`LoadingSpinner.tsx`**: SVG loading spinner in multiple sizes and theme colors.
 
 ---
 
-## 5. Frontend Quality Standards & Line Limits
+## 5. Feature Modals & Interactive Workflows
 
-- **Modularity**: All TSX components adhere to the project guideline of **≤ 300 lines per file**.
-- **Responsive Design**: Interfaces adapt cleanly to mobile, tablet, and desktop viewports.
-- **Type Safety**: Strictly typed interfaces defined in `frontend/src/types/index.ts`. No untyped `any` workarounds.
+Action dialogs are decoupled into separate components (≤ 300 lines each):
+- **`RegisterInstrumentModal`**: Instrument specification entry form.
+- **`CreateApplicationModal`**: Guided flow for initial/re-verification filing.
+- **`ScheduleModal`**: Inspection appointment booking.
+- **`AssignModal`**: Allocates LMO officer or GATC centre verifier.
+- **`AddObservationModal`**: In-field/lab test readings entry.
+- **`InspectionResultModal`**: Officer determination (`VERIFIED`/`REJECTED`).
+- **`IssueCertificateModal`**: Final digital certificate generation.
+- **`EditProfileModal`**: User self-service profile editor.
+- **`ChangePasswordModal`**: Secure password update with current credential check.
+
+---
+
+## 6. Frontend Quality Standards
+
+- **Strict File Limit Compliance**: All TSX/TS files are strictly **≤ 300 lines**.
+- **Type Safety**: Strictly typed interfaces in `types/index.ts` with zero compiler warnings.
+- **Zero Forbidden Tech**: Pure Next.js, Redux Toolkit, Tailwind CSS. No external cloud brokers.

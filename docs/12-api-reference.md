@@ -14,26 +14,41 @@
 | `POST` | `/auth/register` | No | Any | Registers a new user account with stakeholder profile |
 | `POST` | `/auth/login` | No | Any | Authenticates credentials and returns JWT bearer token |
 | `GET` | `/auth/me` | **Yes** | Any Authenticated | Returns current authenticated user profile and role |
+| `PATCH` | `/auth/me` | **Yes** | Any Authenticated | Updates self contact info and organization details |
+| `PATCH` | `/auth/me/password` | **Yes** | Any Authenticated | Changes password after verifying current password |
 
 ---
 
-## 2. Instrument Management
+## 2. Administrator Stakeholder Management
+
+| Method | Endpoint | Auth Required | Permitted Roles | Description |
+| :--- | :--- | :---: | :--- | :--- |
+| `GET` | `/admin/users` | **Yes** | Admin | Lists system users with role/status search & pagination |
+| `POST` | `/admin/users` | **Yes** | Admin | Provisions official accounts (`LMO`, `GATC`, `ADMIN`) |
+| `PATCH` | `/admin/users/{id}/status` | **Yes** | Admin | Activates or deactivates a user account |
+
+---
+
+## 3. Instrument Management
 
 | Method | Endpoint | Auth Required | Permitted Roles | Description |
 | :--- | :--- | :---: | :--- | :--- |
 | `POST` | `/instruments` | **Yes** | Owner, LMO, Admin | Registers a physical measuring instrument |
 | `GET` | `/instruments` | **Yes** | Owner, LMO, GATC, Admin | Lists instruments (scoped by user role and ownership) |
 | `GET` | `/instruments/{id}` | **Yes** | Owner, LMO, GATC, Admin | Retrieves full details of a specific registered instrument |
+| `PATCH` | `/instruments/{id}` | **Yes** | Owner, LMO, Admin | Updates instrument location, capacity, or specifications |
+| `PATCH` | `/instruments/{id}/deactivate` | **Yes** | Owner, LMO, Admin | Deactivates instrument from verification eligibility |
 
 ---
 
-## 3. Verification Applications
+## 4. Verification Applications
 
 | Method | Endpoint | Auth Required | Permitted Roles | Description |
 | :--- | :--- | :---: | :--- | :--- |
 | `POST` | `/applications` | **Yes** | Owner, Admin | Creates a verification application (`DRAFT` status) |
 | `GET` | `/applications` | **Yes** | Owner, LMO, GATC, Admin | Lists applications with status and date filtering |
 | `GET` | `/applications/{id}` | **Yes** | Owner, LMO, GATC, Admin | Retrieves application record with full audit history |
+| `DELETE`| `/applications/{id}` | **Yes** | Owner, Admin | Permanently deletes an un-submitted `DRAFT` application |
 | `PATCH` | `/applications/{id}/status` | **Yes** | LMO, Admin, Owner | Transitions application status (`SUBMITTED`, `UNDER_REVIEW`, `REJECTED`) |
 | `PATCH` | `/applications/{id}/schedule` | **Yes** | LMO, Admin | Schedules inspection date, time slot, and premises location |
 | `PATCH` | `/applications/{id}/assignment` | **Yes** | LMO, Admin | Allocates or reassigns verifier (`assigned_to_id`) |
@@ -44,7 +59,7 @@
 
 ---
 
-## 4. Inspections & Observations
+## 5. Inspections & Observations
 
 | Method | Endpoint | Auth Required | Permitted Roles | Description |
 | :--- | :--- | :---: | :--- | :--- |
@@ -56,7 +71,7 @@
 
 ---
 
-## 5. Digital Certificates & Public Verification
+## 6. Digital Certificates & Public Verification
 
 | Method | Endpoint | Auth Required | Permitted Roles | Description |
 | :--- | :--- | :---: | :--- | :--- |
@@ -69,11 +84,12 @@
 
 ---
 
-## 6. Dashboards, Notifications & Reporting
+## 7. Dashboards, Search, Notifications & Reporting
 
 | Method | Endpoint | Auth Required | Permitted Roles | Description |
 | :--- | :--- | :---: | :--- | :--- |
 | `GET` | `/dashboard/summary` | **Yes** | Any Authenticated | Aggregates role-specific operational metrics |
+| `GET` | `/search` | **Yes** | Any Authenticated | Multi-domain search across instruments, apps, and certs |
 | `GET` | `/notifications` | **Yes** | Any Authenticated | Retrieves paginated notifications for current user |
 | `PATCH` | `/notifications/{id}/read` | **Yes** | Any Authenticated | Marks a specific notification as read |
 | `PATCH` | `/notifications/read-all` | **Yes** | Any Authenticated | Bulk marks all user notifications as read |
