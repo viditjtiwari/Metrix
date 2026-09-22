@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
@@ -157,6 +158,43 @@ class UserRepository:
                     setattr(profile, key, val.strip() if isinstance(val, str) else val)
         db.flush()
         return profile
+
+    def set_otp(
+        self, db: Session, user_id: int, otp_code: str, expires_at: datetime
+    ) -> None:
+        """Store a hashed OTP code and its expiry on the user record."""
+        user = self.get_by_id(db, user_id)
+        if user:
+            user.otp_code = otp_code
+            user.otp_expires_at = expires_at
+            db.flush()
+
+    def clear_otp(self, db: Session, user_id: int) -> None:
+        """Clear OTP fields after successful verification."""
+        user = self.get_by_id(db, user_id)
+        if user:
+            user.otp_code = None
+            user.otp_expires_at = None
+            db.flush()
+
+    def create_or_get_google_user(
+        self, db: Session, *, email: str, full_name: str
+    ) -> User:
+        """Find existing user by email or create a new Google OAuth user."""
+        existing = self.get_by_email(db, email)
+        if existing:
+            return existing
+        user = User(
+            email=email.lower().strip(),
+            hashed_password=None,
+            full_name=full_name.strip(),
+            role=UserRole.INSTRUMENT_OWNER,
+            is_active=True,
+            auth_provider="google",
+        )
+        db.add(user)
+        db.flush()
+        return user
 
 
 user_repository = UserRepository()

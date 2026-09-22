@@ -1,5 +1,15 @@
 import { baseApi } from "@/services/api";
-import { AuthResponse, LoginCredentials, RegisterCredentials, User } from "@/types";
+import {
+  AuthResponse,
+  GoogleAuthRequest,
+  GoogleAuthURLResponse,
+  LoginCredentials,
+  OTPSendRequest,
+  OTPVerifyRequest,
+  RegisterCredentials,
+  User,
+  UserRoleUpdateRequest,
+} from "@/types";
 
 export interface ProfileUpdateRequest {
   full_name?: string;
@@ -34,6 +44,38 @@ export const authApi = baseApi.injectEndpoints({
         body: userData,
       }),
     }),
+
+    // OTP Login
+    sendOtp: builder.mutation<{ message: string }, OTPSendRequest>({
+      query: (data) => ({
+        url: "/auth/otp/send",
+        method: "POST",
+        body: data,
+      }),
+    }),
+    verifyOtp: builder.mutation<AuthResponse, OTPVerifyRequest>({
+      query: (data) => ({
+        url: "/auth/otp/verify",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Auth"],
+    }),
+
+    // Google OAuth
+    getGoogleUrl: builder.query<GoogleAuthURLResponse, void>({
+      query: () => "/auth/google/url",
+    }),
+    googleAuth: builder.mutation<AuthResponse, GoogleAuthRequest>({
+      query: (data) => ({
+        url: "/auth/google",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Auth"],
+    }),
+
+    // Profile
     getMe: builder.query<User, void>({
       query: () => "/auth/me",
       providesTags: ["Auth"],
@@ -53,13 +95,28 @@ export const authApi = baseApi.injectEndpoints({
         body: data,
       }),
     }),
+
+    // Admin Role Update
+    updateUserRole: builder.mutation<User, { userId: number; data: UserRoleUpdateRequest }>({
+      query: ({ userId, data }) => ({
+        url: `/admin/users/${userId}/role`,
+        method: "PATCH",
+        body: data,
+      }),
+    }),
   }),
 });
 
 export const {
   useLoginMutation,
   useRegisterMutation,
+  useSendOtpMutation,
+  useVerifyOtpMutation,
+  useGetGoogleUrlQuery,
+  useLazyGetGoogleUrlQuery,
+  useGoogleAuthMutation,
   useGetMeQuery,
   useUpdateProfileMutation,
   useChangePasswordMutation,
+  useUpdateUserRoleMutation,
 } = authApi;

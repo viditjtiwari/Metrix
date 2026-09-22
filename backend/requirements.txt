@@ -18,7 +18,10 @@ python-multipart>=0.0.6
 reportlab>=4.0.0
 qrcode[pil]>=7.4.2
 
+# HTTP Client (Google OAuth)
+httpx>=0.24.0
+
 # Testing & Development
 pytest>=7.4.0
-httpx>=0.24.0
 pytest-asyncio>=0.21.0
+

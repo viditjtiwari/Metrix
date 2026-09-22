@@ -9,6 +9,12 @@ class UserRole(str, enum.Enum):
     INSTRUMENT_OWNER = "INSTRUMENT_OWNER"
 
 
+class AuthProvider(str, enum.Enum):
+    """Authentication provider for user accounts."""
+    LOCAL = "local"
+    GOOGLE = "google"
+
+
 class ApplicationStatus(str, enum.Enum):
     """Legal metrology verification application workflow statuses."""
     DRAFT = "DRAFT"

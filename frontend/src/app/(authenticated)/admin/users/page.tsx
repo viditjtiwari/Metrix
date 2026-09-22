@@ -11,14 +11,17 @@ import {
   useCreateOfficialUserMutation,
   AdminUserItem,
 } from "@/features/admin/adminApi";
+import { ChangeRoleModal } from "@/features/admin/ChangeRoleModal";
 import { getRoleBadgeColor, getRoleLabel, formatDate } from "@/utils/formatters";
-import { Users, UserPlus, Shield, CheckCircle, XCircle } from "lucide-react";
+import { UserPlus, CheckCircle, XCircle } from "lucide-react";
+import { UserRole } from "@/types";
 
 export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [roleChangeUser, setRoleChangeUser] = useState<{ id: number; name: string; role: UserRole } | null>(null);
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -107,17 +110,25 @@ export default function AdminUsersPage() {
       key: "actions",
       label: "Actions",
       render: (u: AdminUserItem) => (
-        <button
-          onClick={() => handleToggleStatus(u)}
-          disabled={isUpdatingStatus}
-          className={`px-2.5 py-1 rounded text-[11px] font-medium border transition ${
-            u.is_active
-              ? "border-red-200 text-red-700 hover:bg-red-50"
-              : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-          }`}
-        >
-          {u.is_active ? "Deactivate" : "Activate"}
-        </button>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setRoleChangeUser({ id: u.id, name: u.full_name, role: u.role as UserRole })}
+            className="px-2.5 py-1 rounded text-[11px] font-medium border border-blue-200 text-blue-700 hover:bg-blue-50 transition"
+          >
+            Change Role
+          </button>
+          <button
+            onClick={() => handleToggleStatus(u)}
+            disabled={isUpdatingStatus}
+            className={`px-2.5 py-1 rounded text-[11px] font-medium border transition ${
+              u.is_active
+                ? "border-red-200 text-red-700 hover:bg-red-50"
+                : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+            }`}
+          >
+            {u.is_active ? "Deactivate" : "Activate"}
+          </button>
+        </div>
       ),
     },
   ];
@@ -251,6 +262,17 @@ export default function AdminUsersPage() {
             </div>
           </form>
         </Modal>
+
+        {/* Change Role Modal */}
+        {roleChangeUser && (
+          <ChangeRoleModal
+            userId={roleChangeUser.id}
+            userName={roleChangeUser.name}
+            currentRole={roleChangeUser.role}
+            onClose={() => setRoleChangeUser(null)}
+            onSuccess={() => setRoleChangeUser(null)}
+          />
+        )}
       </div>
     </AuthGuard>
   );

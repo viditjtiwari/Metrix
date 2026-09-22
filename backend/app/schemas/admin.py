@@ -33,3 +33,9 @@ class UserListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class UserRoleUpdate(BaseModel):
+    """Schema for admin role change."""
+    role: UserRole = Field(..., description="New role: INSTRUMENT_OWNER, LMO, GATC, or ADMIN")
+
