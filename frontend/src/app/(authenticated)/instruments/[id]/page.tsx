@@ -13,8 +13,9 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Modal } from "@/components/ui/Modal";
-import { formatDate, formatInstrumentType } from "@/utils/formatters";
+import { formatDate, formatInstrumentType, parseImageUrls } from "@/utils/formatters";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
+import { InstrumentImageUpload } from "@/features/instruments/InstrumentImageUpload";
 import { Scale, FileText, ArrowLeft, Edit, AlertOctagon, PlusCircle } from "lucide-react";
 
 export default function InstrumentDetailPage() {
@@ -79,13 +80,21 @@ export default function InstrumentDetailPage() {
     }
   };
 
+  const imageUrls = parseImageUrls(instrument?.image_urls);
+
   const fields = [
     { label: "Registration Number", value: instrument.registration_number },
     { label: "Type", value: formatInstrumentType(instrument.instrument_type) },
     { label: "Manufacturer", value: instrument.manufacturer },
     { label: "Model", value: instrument.model_name },
     { label: "Serial Number", value: instrument.serial_number },
-    { label: "Capacity", value: instrument.capacity || "—" },
+    {
+      label: "Capacity Range",
+      value:
+        instrument.min_capacity || instrument.max_capacity
+          ? `${instrument.min_capacity || "0"} to ${instrument.max_capacity || "—"} ${instrument.capacity_unit || ""}`.trim()
+          : instrument.capacity || "—",
+    },
     { label: "Location", value: instrument.location },
     { label: "Registered On", value: formatDate(instrument.created_at) },
   ];
@@ -117,6 +126,13 @@ export default function InstrumentDetailPage() {
           ))}
         </div>
       </div>
+
+      {/* Instrument Photos Component */}
+      <InstrumentImageUpload
+        instrumentId={instrument.id}
+        imageUrls={imageUrls}
+        canEdit={canManage}
+      />
 
       {/* Action Buttons */}
       <div className="flex flex-wrap items-center gap-3">

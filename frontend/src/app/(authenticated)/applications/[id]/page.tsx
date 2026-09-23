@@ -22,6 +22,9 @@ import { ScheduleModal } from "@/features/applications/ScheduleModal";
 import { StatusTimeline } from "@/features/applications/StatusTimeline";
 import { CertificateCard } from "@/features/certificates/CertificateCard";
 import { IssueCertificateModal } from "@/features/certificates/IssueCertificateModal";
+import { ApplicationInfoCards } from "@/features/applications/ApplicationInfoCards";
+import { InspectionImageUpload } from "@/features/applications/InspectionImageUpload";
+import { parseImageUrls } from "@/utils/formatters";
 import { useAppSelector } from "@/store/hooks";
 
 export default function ApplicationDetailPage() {
@@ -50,6 +53,20 @@ export default function ApplicationDetailPage() {
     useGetApplicationCertificateQuery(applicationId, {
       skip: !applicationId || !app?.status || app.status !== "CERTIFICATE_ISSUED",
     });
+
+  const safeRefetch = (fn?: () => void) => {
+    try {
+      fn?.();
+    } catch {
+      // Query was not started or skipped; RTK tag invalidation handles updates
+    }
+  };
+
+  React.useEffect(() => {
+    if (app?.status === "CERTIFICATE_ISSUED" && showIssueCert) {
+      setShowIssueCert(false);
+    }
+  }, [app?.status, showIssueCert]);
 
   const [updateStatus, { isLoading: updatingStatus }] = useUpdateApplicationStatusMutation();
   const [startInspection, { isLoading: startingInspection }] = useStartInspectionMutation();
@@ -93,7 +110,7 @@ export default function ApplicationDetailPage() {
     try {
       await startInspection(applicationId).unwrap();
       refetch();
-      refetchInspection();
+      safeRefetch(refetchInspection);
     } catch (err: unknown) {
       setActionError((err as { data?: { detail?: string } })?.data?.detail || "Could not start inspection.");
     }
@@ -117,6 +134,8 @@ export default function ApplicationDetailPage() {
   }
 
   const isAssignedVerifier = inspection?.assigned_to_id === user?.id || user?.role === "ADMIN" || user?.role === "LMO";
+
+  const inspectionImageUrls = parseImageUrls(inspection?.image_urls);
 
   return (
     <div className="space-y-6">
@@ -163,30 +182,8 @@ export default function ApplicationDetailPage() {
             <CertificateCard certificate={certificate} />
           )}
 
-          {/* Metadata */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs text-xs space-y-3">
-            <h3 className="text-sm font-semibold text-slate-900 border-b border-slate-100 pb-2">Application Details</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div>
-                <span className="text-slate-400 block">Instrument ID</span>
-                <span className="font-mono font-medium text-slate-800">INST-#{app.instrument_id}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block">Application Type</span>
-                <span className="font-medium text-slate-800">{app.application_type}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block">Submitted At</span>
-                <span className="font-medium text-slate-800">
-                  {app.submitted_at ? new Date(app.submitted_at).toLocaleString() : "Draft"}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-400 block">Remarks</span>
-                <span className="text-slate-700">{app.remarks || "—"}</span>
-              </div>
-            </div>
-          </div>
+          {/* Applicant & Instrument Specification Cards */}
+          <ApplicationInfoCards app={app} />
 
           {/* Inspection Info Card */}
           {inspection && <InspectionCard inspection={inspection} />}
@@ -197,6 +194,24 @@ export default function ApplicationDetailPage() {
               observations={inspection.observations || []}
               canAdd={app.status === "INSPECTION_IN_PROGRESS" && isAssignedVerifier}
               onAddClick={() => setShowAddObs(true)}
+            />
+          )}
+
+          {/* Proof Photos & Certificate Stamping Photo Selection */}
+          {inspection && (
+            <InspectionImageUpload
+              inspectionId={inspection.id}
+              imageUrls={inspectionImageUrls}
+              certificateImageUrl={
+                (inspection as unknown as { certificate_image_url?: string })?.certificate_image_url
+              }
+              canUpload={
+                (app.status === "INSPECTION_IN_PROGRESS" ||
+                  app.status === "SCHEDULED" ||
+                  app.status === "INSPECTION_COMPLETED") &&
+                isAssignedVerifier
+              }
+              canSelectCertImage={user?.role === "LMO" || user?.role === "ADMIN"}
             />
           )}
         </div>
@@ -215,7 +230,7 @@ export default function ApplicationDetailPage() {
           initialRemarks={inspection?.scheduling_remarks}
           initialVerifierId={inspection?.assigned_to_id}
           onClose={() => setShowSchedule(false)}
-          onSuccess={() => { refetch(); refetchInspection(); }}
+          onSuccess={() => { refetch(); safeRefetch(refetchInspection); }}
         />
       )}
 
@@ -224,7 +239,7 @@ export default function ApplicationDetailPage() {
           applicationId={applicationId}
           currentVerifierId={inspection?.assigned_to_id}
           onClose={() => setShowAssign(false)}
-          onSuccess={() => { refetch(); refetchInspection(); }}
+          onSuccess={() => { refetch(); safeRefetch(refetchInspection); }}
         />
       )}
 
@@ -233,7 +248,7 @@ export default function ApplicationDetailPage() {
           inspectionId={inspection.id}
           applicationId={applicationId}
           onClose={() => setShowAddObs(false)}
-          onSuccess={() => refetchInspection()}
+          onSuccess={() => safeRefetch(refetchInspection)}
         />
       )}
 
@@ -242,18 +257,18 @@ export default function ApplicationDetailPage() {
           inspectionId={inspection.id}
           applicationId={applicationId}
           onClose={() => setShowResult(false)}
-          onSuccess={() => { refetch(); refetchInspection(); }}
+          onSuccess={() => { refetch(); safeRefetch(refetchInspection); }}
         />
       )}
 
-      {showIssueCert && (
+      {showIssueCert && app.status !== "CERTIFICATE_ISSUED" && (
         <IssueCertificateModal
           applicationId={applicationId}
           applicationNumber={app.application_number}
           onClose={() => setShowIssueCert(false)}
           onSuccess={() => {
             refetch();
-            refetchCert();
+            safeRefetch(refetchCert);
           }}
         />
       )}

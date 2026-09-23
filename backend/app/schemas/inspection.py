@@ -64,6 +64,8 @@ class InspectionResponse(BaseModel):
     completed_at: Optional[datetime] = None
     result: Optional[InspectionResult] = None
     result_remarks: Optional[str] = None
+    image_urls: Optional[str] = None
+    certificate_image_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

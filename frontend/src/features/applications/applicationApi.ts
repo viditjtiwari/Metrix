@@ -170,6 +170,28 @@ export const applicationApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Applications"],
     }),
+
+    uploadInspectionImage: builder.mutation<string[], { inspectionId: number; file: File }>({
+      query: ({ inspectionId, file }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return {
+          url: `/inspections/${inspectionId}/images`,
+          method: "POST",
+          body: formData,
+        };
+      },
+      invalidatesTags: ["Inspections"],
+    }),
+
+    selectCertificateImage: builder.mutation<{ certificate_image_url: string }, { inspectionId: number; imageUrl: string }>({
+      query: ({ inspectionId, imageUrl }) => ({
+        url: `/inspections/${inspectionId}/certificate-image`,
+        method: "PATCH",
+        body: { image_url: imageUrl },
+      }),
+      invalidatesTags: ["Inspections"],
+    }),
   }),
 });
 
@@ -187,6 +209,8 @@ export const {
   useGetObservationsQuery,
   useSubmitInspectionResultMutation,
   useDeleteApplicationMutation,
+  useUploadInspectionImageMutation,
+  useSelectCertificateImageMutation,
 } = applicationApi;
 
 export const useListApplicationsQuery = applicationApi.endpoints.getApplications.useQuery;

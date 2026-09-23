@@ -7,7 +7,11 @@ export const dashboardApi = baseApi.injectEndpoints({
       query: () => "/dashboard/summary",
       providesTags: ["Dashboard"],
     }),
+    getDashboardCharts: builder.query<Record<string, any>, void>({
+      query: () => "/dashboard/charts",
+      providesTags: ["Dashboard"],
+    }),
   }),
 });
 
-export const { useGetDashboardSummaryQuery } = dashboardApi;
+export const { useGetDashboardSummaryQuery, useGetDashboardChartsQuery } = dashboardApi;

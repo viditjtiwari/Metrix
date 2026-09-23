@@ -1,15 +1,17 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, Response, UploadFile, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user, get_db, require_role
 from app.models.enums import InstrumentType, UserRole
 from app.models.user import User
 from app.schemas.instrument import (
+    BatchInstrumentUploadResponse,
     InstrumentCreate,
     InstrumentListResponse,
     InstrumentResponse,
     InstrumentUpdate,
 )
+from app.services.instrument_batch_service import instrument_batch_service
 from app.services.instrument_service import instrument_service
 
 router = APIRouter(prefix="/instruments", tags=["Instruments"])
@@ -25,7 +27,7 @@ def register_instrument(
     instrument_in: InstrumentCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_role(UserRole.INSTRUMENT_OWNER, UserRole.ADMIN)
+        require_role(UserRole.INSTRUMENT_OWNER)
     ),
 ) -> InstrumentResponse:
     """Register a new weighing or measuring instrument under the authenticated owner."""
@@ -66,6 +68,36 @@ def list_instruments(
         page=page,
         page_size=page_size,
     )
+
+
+@router.get(
+    "/csv-template",
+    status_code=status.HTTP_200_OK,
+    summary="Download Batch Instrument CSV Template",
+)
+def download_csv_template() -> Response:
+    """Download standard CSV template for bulk instrument registration."""
+    csv_data = instrument_batch_service.get_sample_csv_template()
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="metrix_instruments_template.csv"'},
+    )
+
+
+@router.post(
+    "/batch-upload",
+    response_model=BatchInstrumentUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Batch Register Instruments via CSV",
+)
+def batch_upload_instruments(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.INSTRUMENT_OWNER, UserRole.ADMIN)),
+) -> BatchInstrumentUploadResponse:
+    """Upload CSV file to batch-register multiple instruments at once."""
+    return instrument_batch_service.process_csv_upload(db, file=file, current_user=current_user)
 
 
 @router.get(
@@ -124,3 +156,4 @@ def deactivate_instrument(
         db, instrument_id=instrument_id, current_user=current_user
     )
     return InstrumentResponse.model_validate(instrument)
+

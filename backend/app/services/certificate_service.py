@@ -18,6 +18,7 @@ from app.schemas.certificate import (
     CertificateResponse,
     PublicCertificateVerificationResponse,
 )
+from app.services.certificate_hasher import compute_integrity_hash, generate_canonical_payload
 from app.services.notification_service import notification_service
 from app.services.pdf_service import pdf_service
 
@@ -28,56 +29,13 @@ class CertificateService:
     PDF generation with embedded QR tokens, and public verification.
     """
 
-    def generate_canonical_payload(
-        self,
-        *,
-        certificate_number: str,
-        application_number: str,
-        instrument_registration_number: str,
-        instrument_serial_number: str,
-        instrument_type: str,
-        owner_identifier: str,
-        inspection_result: str,
-        issued_at: datetime | str,
-        valid_from: date | str,
-        valid_until: date | str,
-        verification_token: str,
-    ) -> str:
+    def generate_canonical_payload(self, **kwargs) -> str:
         """Create a deterministic canonical JSON string for SHA-256 integrity calculation."""
-        if isinstance(issued_at, datetime):
-            issued_str = issued_at.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        elif isinstance(issued_at, str):
-            try:
-                dt = datetime.fromisoformat(issued_at.replace("Z", "+00:00"))
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=timezone.utc)
-                issued_str = dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-            except Exception:
-                issued_str = issued_at
-        else:
-            issued_str = str(issued_at)
-
-        v_from_str = valid_from.isoformat() if hasattr(valid_from, "isoformat") else str(valid_from)
-        v_until_str = valid_until.isoformat() if hasattr(valid_until, "isoformat") else str(valid_until)
-
-        payload = {
-            "application_number": application_number,
-            "certificate_number": certificate_number,
-            "inspection_result": inspection_result,
-            "instrument_registration_number": instrument_registration_number,
-            "instrument_serial_number": instrument_serial_number,
-            "instrument_type": instrument_type,
-            "issued_at": issued_str,
-            "owner_identifier": owner_identifier,
-            "valid_from": v_from_str,
-            "valid_until": v_until_str,
-            "verification_token": verification_token,
-        }
-        return json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        return generate_canonical_payload(**kwargs)
 
     def calculate_integrity_hash(self, canonical_payload: str) -> str:
         """Compute SHA-256 digest of canonical certificate data."""
-        return hashlib.sha256(canonical_payload.encode("utf-8")).hexdigest()
+        return compute_integrity_hash(canonical_payload)
 
     def generate_certificate_number(self, db: Session) -> str:
         """Generate a human-readable unique certificate number (METRIX-CERT-YYYY-000001)."""
@@ -354,6 +312,35 @@ class CertificateService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Verification certificate not found for the provided QR token.",
+            )
+
+        effective_status = self._get_effective_status(cert)
+        inst = cert.instrument
+
+        return PublicCertificateVerificationResponse(
+            certificate_number=cert.certificate_number,
+            instrument_registration_number=inst.registration_number if inst else "N/A",
+            instrument_type=inst.instrument_type.value if inst else "N/A",
+            manufacturer=inst.manufacturer if inst else "N/A",
+            model=inst.model_name if inst else "N/A",
+            serial_number=inst.serial_number if inst else None,
+            verification_result="VERIFIED",
+            issued_at=cert.issued_at,
+            valid_from=cert.valid_from,
+            valid_until=cert.valid_until,
+            status=effective_status,
+            integrity_hash=cert.integrity_hash,
+        )
+
+    def verify_by_certificate_number(
+        self, db: Session, *, certificate_number: str
+    ) -> PublicCertificateVerificationResponse:
+        """Verify certificate by its certificate number (public lookup)."""
+        cert = certificate_repository.get_by_certificate_number(db, certificate_number)
+        if not cert:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No certificate found matching the provided certificate number.",
             )
 
         effective_status = self._get_effective_status(cert)

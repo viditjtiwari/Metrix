@@ -44,6 +44,8 @@ class Inspection(Base, TimestampMixin):
         nullable=True,
     )
     result_remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    image_urls: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    certificate_image_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
 
     application: Mapped[VerificationApplication] = relationship(
         "VerificationApplication", back_populates="inspection"

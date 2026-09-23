@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List, Optional
-from sqlalchemy import Boolean, Enum, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base, TimestampMixin
 from app.models.enums import InstrumentType
@@ -34,6 +34,10 @@ class Instrument(Base, TimestampMixin):
         String(128), index=True, nullable=False
     )
     capacity: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    min_capacity: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    max_capacity: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    capacity_unit: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    image_urls: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     location: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 

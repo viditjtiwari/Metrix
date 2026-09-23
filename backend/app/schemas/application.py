@@ -49,9 +49,25 @@ class ApplicationResponse(BaseModel):
 
 
 class ApplicationDetailResponse(ApplicationResponse):
-    """Schema for verification application detailed response including audit history."""
+    """Schema for verification application detailed response including
+    audit history, applicant info, and instrument details."""
     status_history: List[StatusHistoryResponse] = []
     inspection: Optional[InspectionResponse] = None
+
+    # Enriched applicant info (populated by the router)
+    applicant_name: Optional[str] = None
+    applicant_email: Optional[str] = None
+    applicant_business_name: Optional[str] = None
+    applicant_phone: Optional[str] = None
+
+    # Enriched instrument info (populated by the router)
+    instrument_registration_number: Optional[str] = None
+    instrument_type: Optional[str] = None
+    instrument_manufacturer: Optional[str] = None
+    instrument_model: Optional[str] = None
+    instrument_serial_number: Optional[str] = None
+    instrument_capacity: Optional[str] = None
+    instrument_location: Optional[str] = None
 
 
 class ApplicationListResponse(BaseModel):

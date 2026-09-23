@@ -21,6 +21,14 @@ class InstrumentRepository:
         )
         return db.execute(stmt).scalar_one_or_none()
 
+    def get_by_serial_number(
+        self, db: Session, serial_number: str
+    ) -> Optional[Instrument]:
+        stmt = select(Instrument).where(
+            Instrument.serial_number == serial_number.strip()
+        )
+        return db.execute(stmt).scalar_one_or_none()
+
     def search(
         self,
         db: Session,
@@ -82,6 +90,13 @@ class InstrumentRepository:
         owner_id: int,
         instrument_data: InstrumentCreate,
     ) -> Instrument:
+        capacity_str = instrument_data.capacity.strip() if instrument_data.capacity else None
+        if not capacity_str and (instrument_data.min_capacity or instrument_data.max_capacity):
+            min_c = instrument_data.min_capacity.strip() if instrument_data.min_capacity else "0"
+            max_c = instrument_data.max_capacity.strip() if instrument_data.max_capacity else ""
+            unit = instrument_data.capacity_unit.strip() if instrument_data.capacity_unit else ""
+            capacity_str = f"{min_c} - {max_c} {unit}".strip()
+
         instrument = Instrument(
             registration_number=registration_number,
             owner_id=owner_id,
@@ -89,7 +104,10 @@ class InstrumentRepository:
             manufacturer=instrument_data.manufacturer.strip(),
             model_name=instrument_data.model_name.strip(),
             serial_number=instrument_data.serial_number.strip(),
-            capacity=instrument_data.capacity.strip() if instrument_data.capacity else None,
+            capacity=capacity_str,
+            min_capacity=instrument_data.min_capacity.strip() if instrument_data.min_capacity else None,
+            max_capacity=instrument_data.max_capacity.strip() if instrument_data.max_capacity else None,
+            capacity_unit=instrument_data.capacity_unit.strip() if instrument_data.capacity_unit else None,
             location=instrument_data.location.strip(),
             is_active=True,
         )

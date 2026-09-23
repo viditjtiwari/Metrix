@@ -46,6 +46,13 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     )
 
 
+import os
+from fastapi.staticfiles import StaticFiles
+
 # Mount Central API v1 Router
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Ensure upload directory exists and mount static route for uploads
+os.makedirs(settings.UPLOAD_STORAGE_DIR, exist_ok=True)
+app.mount(f"{settings.API_V1_STR}/uploads", StaticFiles(directory=settings.UPLOAD_STORAGE_DIR), name="uploads")
 

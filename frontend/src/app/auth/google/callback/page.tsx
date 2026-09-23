@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useGoogleAuthMutation } from "@/features/auth/authApi";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/features/auth/authSlice";
 
-export default function GoogleCallbackPage() {
+function GoogleCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -71,5 +71,22 @@ export default function GoogleCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-md mx-auto my-16 text-center">
+          <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <div className="h-10 w-10 rounded-full border-3 border-emerald-600 border-t-transparent animate-spin mx-auto" />
+            <p className="text-sm text-slate-600">Loading Google authentication...</p>
+          </div>
+        </div>
+      }
+    >
+      <GoogleCallbackContent />
+    </Suspense>
   );
 }

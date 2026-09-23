@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/store/hooks";
 import { useListInstrumentsQuery } from "@/features/instruments/instrumentApi";
 import { RegisterInstrumentModal } from "@/features/instruments/RegisterInstrumentModal";
+import { BatchRegisterModal } from "@/features/instruments/BatchRegisterModal";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDate, formatInstrumentType } from "@/utils/formatters";
 import { InstrumentResponse, InstrumentType } from "@/types";
-import { Plus, Scale } from "lucide-react";
+import { Plus, Scale, Upload } from "lucide-react";
 
 export default function InstrumentsPage() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function InstrumentsPage() {
   const [typeFilter, setTypeFilter] = useState("");
   const [searchText, setSearchText] = useState("");
   const [showRegister, setShowRegister] = useState(false);
+  const [showBatchModal, setShowBatchModal] = useState(false);
 
   const { data, isLoading } = useListInstrumentsQuery({
     page,
@@ -27,7 +29,7 @@ export default function InstrumentsPage() {
     registration_number: searchText || undefined,
   });
 
-  const canRegister = user?.role === "INSTRUMENT_OWNER" || user?.role === "ADMIN";
+  const canRegister = user?.role === "INSTRUMENT_OWNER";
 
   const columns = [
     {
@@ -47,6 +49,17 @@ export default function InstrumentsPage() {
     { key: "manufacturer", label: "Manufacturer" },
     { key: "model_name", label: "Model" },
     { key: "serial_number", label: "Serial No." },
+    {
+      key: "capacity",
+      label: "Capacity",
+      render: (row: InstrumentResponse) => (
+        <span className="text-xs font-medium text-emerald-700">
+          {row.min_capacity || row.max_capacity
+            ? `${row.min_capacity || "0"} - ${row.max_capacity || "—"} ${row.capacity_unit || ""}`.trim()
+            : row.capacity || "—"}
+        </span>
+      ),
+    },
     { key: "location", label: "Location" },
     {
       key: "is_active",
@@ -72,12 +85,20 @@ export default function InstrumentsPage() {
         badge={<Scale size={18} className="text-slate-400" />}
         actions={
           canRegister ? (
-            <button
-              onClick={() => setShowRegister(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition"
-            >
-              <Plus size={16} /> Register Instrument
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowBatchModal(true)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-emerald-600/30 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-sm font-medium transition"
+              >
+                <Upload size={16} /> Bulk Upload (CSV)
+              </button>
+              <button
+                onClick={() => setShowRegister(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition"
+              >
+                <Plus size={16} /> Register Instrument
+              </button>
+            </div>
           ) : undefined
         }
       />
@@ -115,9 +136,14 @@ export default function InstrumentsPage() {
         emptyDescription={canRegister ? "Register your first instrument to get started." : "No instruments found matching your filters."}
         emptyAction={
           canRegister ? (
-            <button onClick={() => setShowRegister(true)} className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition">
-              Register Instrument
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowBatchModal(true)} className="px-4 py-2 rounded-lg border border-emerald-600/30 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-sm font-medium transition">
+                Bulk Upload (CSV)
+              </button>
+              <button onClick={() => setShowRegister(true)} className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition">
+                Register Instrument
+              </button>
+            </div>
           ) : undefined
         }
         onRowClick={(row) => router.push(`/instruments/${row.id}`)}
@@ -133,6 +159,15 @@ export default function InstrumentsPage() {
           onSuccess={(inst) => {
             setShowRegister(false);
             router.push(`/instruments/${inst.id}`);
+          }}
+        />
+      )}
+
+      {showBatchModal && (
+        <BatchRegisterModal
+          onClose={() => setShowBatchModal(false)}
+          onSuccess={() => {
+            setShowBatchModal(false);
           }}
         />
       )}
