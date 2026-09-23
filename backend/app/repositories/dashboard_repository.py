@@ -340,8 +340,8 @@ class DashboardRepository:
             app_count = db.execute(app_cnt_stmt).scalar_one()
 
             cert_cnt_stmt = select(func.count(Certificate.id)).where(
-                Certificate.issue_date >= month_start,
-                Certificate.issue_date < next_month,
+                Certificate.issued_at >= month_start,
+                Certificate.issued_at < next_month,
             )
             if role == UserRole.INSTRUMENT_OWNER:
                 cert_cnt_stmt = cert_cnt_stmt.join(Instrument, Certificate.instrument_id == Instrument.id).where(
