@@ -38,7 +38,7 @@ def create_application(
     app_in: ApplicationCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_role(UserRole.INSTRUMENT_OWNER, UserRole.ADMIN)
+        require_role(UserRole.INSTRUMENT_OWNER)
     ),
 ) -> ApplicationResponse:
     """Create a new verification or re-verification application for an instrument."""
@@ -97,10 +97,9 @@ def get_application(
     current_user: User = Depends(get_current_user),
 ) -> ApplicationDetailResponse:
     """Retrieve full details of a verification application including audit status history."""
-    application = application_service.get_application(
+    return application_service.get_application_detail(
         db, application_id=application_id, current_user=current_user
     )
-    return ApplicationDetailResponse.model_validate(application)
 
 
 @router.patch(
@@ -123,7 +122,7 @@ def transition_status(
         current_user=current_user,
         remarks=status_update.remarks,
     )
-    return ApplicationDetailResponse.model_validate(updated)
+    return application_service.enrich_application_detail(updated)
 
 
 @router.patch(

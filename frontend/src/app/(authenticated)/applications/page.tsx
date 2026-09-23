@@ -27,7 +27,7 @@ export default function ApplicationsPage() {
     application_number: searchText || undefined,
   });
 
-  const canCreate = user?.role === "INSTRUMENT_OWNER" || user?.role === "ADMIN";
+  const canCreate = user?.role === "INSTRUMENT_OWNER";
 
   const columns = [
     {

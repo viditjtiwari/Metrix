@@ -11,6 +11,7 @@ from app.repositories.application_repository import application_repository
 from app.repositories.instrument_repository import instrument_repository
 from app.schemas.application import (
     ApplicationCreate,
+    ApplicationDetailResponse,
     ApplicationListResponse,
     ApplicationResponse,
 )
@@ -200,6 +201,36 @@ class ApplicationService:
             )
 
         return application
+
+    def enrich_application_detail(
+        self, application: VerificationApplication
+    ) -> ApplicationDetailResponse:
+        detail = ApplicationDetailResponse.model_validate(application)
+        if application.applicant:
+            detail.applicant_name = application.applicant.full_name
+            detail.applicant_email = application.applicant.email
+            if application.applicant.profile:
+                detail.applicant_business_name = application.applicant.profile.business_name
+                detail.applicant_phone = application.applicant.profile.contact_phone
+        if application.instrument:
+            detail.instrument_registration_number = application.instrument.registration_number
+            detail.instrument_type = (
+                application.instrument.instrument_type.value
+                if hasattr(application.instrument.instrument_type, "value")
+                else str(application.instrument.instrument_type)
+            )
+            detail.instrument_manufacturer = application.instrument.manufacturer
+            detail.instrument_model = application.instrument.model_name
+            detail.instrument_serial_number = application.instrument.serial_number
+            detail.instrument_capacity = application.instrument.capacity
+            detail.instrument_location = application.instrument.location
+        return detail
+
+    def get_application_detail(
+        self, db: Session, application_id: int, current_user: User
+    ) -> ApplicationDetailResponse:
+        application = self.get_application(db, application_id, current_user)
+        return self.enrich_application_detail(application)
 
     def list_applications(
         self,

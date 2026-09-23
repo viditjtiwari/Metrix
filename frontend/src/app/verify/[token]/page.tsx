@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { PublicCertificateVerificationResponse } from "@/types";
+import { GlobalTopNav } from "@/components/layout/GlobalTopNav";
+import { GlobalFooter } from "@/components/layout/GlobalFooter";
 
 export default function PublicVerifyPage() {
   const params = useParams();
@@ -43,17 +45,20 @@ export default function PublicVerifyPage() {
   const isExpired = cert?.status === "EXPIRED";
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 flex flex-col items-center">
-      {/* Header Emblem */}
-      <div className="w-full max-w-xl text-center mb-8">
-        <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-emerald-600 text-white font-bold text-xl shadow-md mb-3">
-          M
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      <GlobalTopNav />
+      <main className="flex-1 py-10 px-4 sm:px-6 flex flex-col items-center">
+        {/* Header Emblem */}
+        <div className="w-full max-w-xl text-center mb-8">
+          <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-emerald-600 text-white font-bold text-xl shadow-md mb-3">
+            M
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">METRIX Public Registry</h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Government Legal Metrology Statutory Instrument Verification System
+          </p>
         </div>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">METRIX Public Registry</h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Government Legal Metrology Instrument Verification System
-        </p>
-      </div>
+
 
       <div className="w-full max-w-xl bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 text-xs">
         {loading ? (
@@ -191,6 +196,9 @@ export default function PublicVerifyPage() {
           </Link>
         </div>
       </div>
+      </main>
+      <GlobalFooter />
     </div>
   );
 }
+

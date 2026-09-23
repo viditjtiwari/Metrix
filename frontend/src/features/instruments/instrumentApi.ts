@@ -1,5 +1,5 @@
 import { baseApi } from "@/services/api";
-import { InstrumentListResponse, InstrumentType } from "@/types";
+import { BatchInstrumentUploadResponse, InstrumentListResponse, InstrumentType } from "@/types";
 import { Instrument, InstrumentCreateRequest } from "./instrumentTypes";
 
 export const instrumentApi = baseApi.injectEndpoints({
@@ -49,6 +49,15 @@ export const instrumentApi = baseApi.injectEndpoints({
       invalidatesTags: ["Instruments"],
     }),
 
+    batchUploadInstruments: builder.mutation<BatchInstrumentUploadResponse, FormData>({
+      query: (formData) => ({
+        url: "/instruments/batch-upload",
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["Instruments"],
+    }),
+
     updateInstrument: builder.mutation<
       Instrument,
       { id: number; data: Partial<InstrumentCreateRequest> }
@@ -74,6 +83,27 @@ export const instrumentApi = baseApi.injectEndpoints({
         "Instruments",
       ],
     }),
+
+    uploadInstrumentImage: builder.mutation<string[], { id: number; file: File }>({
+      query: ({ id, file }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return {
+          url: `/instruments/${id}/images`,
+          method: "POST",
+          body: formData,
+        };
+      },
+      invalidatesTags: (_res, _err, { id }) => [{ type: "Instruments", id }, "Instruments"],
+    }),
+
+    deleteInstrumentImage: builder.mutation<string[], { id: number; index: number }>({
+      query: ({ id, index }) => ({
+        url: `/instruments/${id}/images/${index}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_res, _err, { id }) => [{ type: "Instruments", id }, "Instruments"],
+    }),
   }),
 });
 
@@ -81,8 +111,12 @@ export const {
   useSearchInstrumentsQuery,
   useGetInstrumentQuery,
   useCreateInstrumentMutation,
+  useBatchUploadInstrumentsMutation,
   useUpdateInstrumentMutation,
   useDeactivateInstrumentMutation,
+  useUploadInstrumentImageMutation,
+  useDeleteInstrumentImageMutation,
 } = instrumentApi;
 
 export const useListInstrumentsQuery = instrumentApi.endpoints.searchInstruments.useQuery;
+

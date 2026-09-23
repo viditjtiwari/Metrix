@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.application import ApplicationStatusHistory, VerificationApplication
 from app.models.enums import ApplicationStatus
 from app.models.instrument import Instrument
+from app.models.user import User
 
 
 class ApplicationRepository:
@@ -27,6 +28,8 @@ class ApplicationRepository:
             .options(
                 selectinload(VerificationApplication.status_history),
                 selectinload(VerificationApplication.inspection),
+                selectinload(VerificationApplication.instrument),
+                selectinload(VerificationApplication.applicant).selectinload(User.profile),
             )
             .where(VerificationApplication.id == application_id)
         )
@@ -40,6 +43,8 @@ class ApplicationRepository:
             .options(
                 selectinload(VerificationApplication.status_history),
                 selectinload(VerificationApplication.inspection),
+                selectinload(VerificationApplication.instrument),
+                selectinload(VerificationApplication.applicant).selectinload(User.profile),
             )
             .where(
                 VerificationApplication.application_number

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { AuthGuard } from "./AuthGuard";
+import { DashboardFooter } from "./DashboardFooter";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -29,13 +30,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         {/* Main content area */}
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar onMenuToggle={() => setMobileOpen(!mobileOpen)} />
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            <div className="max-w-7xl mx-auto">
-              {children}
-            </div>
-          </main>
+          <div className="flex-1 overflow-y-auto flex flex-col justify-between">
+            <main className="p-4 lg:p-6">
+              <div className="max-w-7xl mx-auto">
+                {children}
+              </div>
+            </main>
+            <DashboardFooter />
+          </div>
         </div>
       </div>
     </AuthGuard>
   );
 }
+

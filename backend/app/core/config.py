@@ -77,5 +77,11 @@ class Settings(BaseSettings):
     OTP_EXPIRE_MINUTES: int = 5
     OTP_LENGTH: int = 6
 
+    # Cloudinary & Upload Settings
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
+    UPLOAD_STORAGE_DIR: str = str(_BACKEND_DIR / "storage" / "uploads")
+
 
 settings = Settings()

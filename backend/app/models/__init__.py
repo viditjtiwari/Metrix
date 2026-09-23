@@ -5,6 +5,7 @@ from app.models.application import ApplicationStatusHistory, VerificationApplica
 from app.models.inspection import Inspection, InspectionObservation
 from app.models.certificate import Certificate
 from app.models.notification import Notification
+from app.models.notice import Notice
 
 __all__ = [
     "UserRole",
@@ -22,5 +23,6 @@ __all__ = [
     "InspectionObservation",
     "Certificate",
     "Notification",
+    "Notice",
 ]
 

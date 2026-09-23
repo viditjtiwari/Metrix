@@ -117,6 +117,38 @@ def seed_development_data() -> None:
                 pincode="411057",
             ),
         )
+
+        # Seed initial departmental notices
+        from app.models.notice import Notice
+        from sqlalchemy import func, select
+        notice_count = db.execute(select(func.count(Notice.id))).scalar_one()
+        if notice_count == 0:
+            admin_user = user_repository.get_by_email(db, "admin@metrix.gov.in")
+            admin_id = admin_user.id if admin_user else None
+            sample_notices = [
+                Notice(
+                    title="Annual Re-verification Drive for Commercial Weighing Instruments 2026-27",
+                    content="All commercial establishments, traders, and logistics operators are hereby informed that the mandatory annual verification and stamping drive under the Legal Metrology Act commences from 1st October 2026. Please submit verification requests through the portal.",
+                    is_active=True,
+                    published_by_id=admin_id,
+                ),
+                Notice(
+                    title="Mandatory Digital Certificate Generation & QR Verification Guidelines",
+                    content="Legal Metrology Officers and Government Approved Test Centres must ensure all newly verified instruments carry digital QR-coded certificates issued through the METRIX portal. Physical stamping must correspond to the unique certificate number.",
+                    is_active=True,
+                    published_by_id=admin_id,
+                ),
+                Notice(
+                    title="Standard Operating Procedure for Calibration at GATC Facilities",
+                    content="Updated technical specifications for non-automatic weighing instruments (NAWI Class I, II, and III) according to OIML R-76 recommendations are now available for all registered test laboratories.",
+                    is_active=True,
+                    published_by_id=admin_id,
+                ),
+            ]
+            db.add_all(sample_notices)
+            db.commit()
+            print(f"[+] Successfully seeded {len(sample_notices)} departmental notices.")
+
         print("=== Seeding complete. All baseline development accounts verified ===")
     finally:
         db.close()

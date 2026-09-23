@@ -23,6 +23,7 @@ export const IssueCertificateModal: React.FC<IssueCertificateModalProps> = ({
 
   const handleIssue = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setErrorMsg(null);
 
     try {
@@ -31,12 +32,33 @@ export const IssueCertificateModal: React.FC<IssueCertificateModalProps> = ({
         data: { remarks: remarks.trim() || undefined },
       }).unwrap();
 
-      onSuccess();
       onClose();
+      try {
+        onSuccess();
+      } catch (cbErr) {
+        console.warn("Post-issuance callback notice:", cbErr);
+      }
     } catch (err: unknown) {
-      const detail =
-        (err as { data?: { detail?: string } })?.data?.detail ||
-        "Failed to issue digital certificate.";
+      let detail = "Failed to issue digital certificate.";
+      if (err && typeof err === "object") {
+        const errObj = err as Record<string, unknown>;
+        const errData = errObj.data as Record<string, unknown> | undefined;
+        if (typeof errData?.detail === "string") {
+          detail = errData.detail;
+        } else if (Array.isArray(errData?.detail)) {
+          detail = errData.detail
+            .map((item: unknown) =>
+              typeof item === "object" && item !== null && "msg" in item
+                ? String((item as { msg: unknown }).msg)
+                : JSON.stringify(item)
+            )
+            .join("; ");
+        } else if (typeof errData?.message === "string") {
+          detail = errData.message;
+        } else if (typeof errObj.message === "string") {
+          detail = errObj.message;
+        }
+      }
       setErrorMsg(detail);
     }
   };
@@ -59,7 +81,23 @@ export const IssueCertificateModal: React.FC<IssueCertificateModalProps> = ({
 
         {errorMsg && (
           <div className="mt-3 rounded-lg bg-rose-50 p-2.5 text-rose-700 border border-rose-200">
-            {errorMsg}
+            <p className="font-medium">{errorMsg}</p>
+            {errorMsg.toLowerCase().includes("already been issued") && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  try {
+                    onSuccess();
+                  } catch {
+                    // Safe ignore
+                  }
+                }}
+                className="mt-2 text-xs font-semibold text-rose-800 underline hover:text-rose-950 block text-left"
+              >
+                Close and View Certificate →
+              </button>
+            )}
           </div>
         )}
 

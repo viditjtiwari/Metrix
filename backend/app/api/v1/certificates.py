@@ -143,3 +143,17 @@ def verify_certificate_public(
 ) -> PublicCertificateVerificationResponse:
     """Public, unauthenticated verification endpoint called via QR code scan or portal lookup."""
     return certificate_service.verify_public_token(db, token=verification_token)
+
+
+@router.get(
+    "/public/certificates/lookup/{certificate_number}",
+    response_model=PublicCertificateVerificationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Public Certificate Lookup by Number",
+)
+def lookup_certificate_public(
+    certificate_number: str,
+    db: Session = Depends(get_db),
+) -> PublicCertificateVerificationResponse:
+    """Public, unauthenticated lookup endpoint for verifying certificates by certificate number."""
+    return certificate_service.verify_by_certificate_number(db, certificate_number=certificate_number)

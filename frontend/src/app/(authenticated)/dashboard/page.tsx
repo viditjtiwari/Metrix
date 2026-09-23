@@ -8,6 +8,9 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { getRoleLabel } from "@/utils/formatters";
+import { LifecycleStepper } from "@/features/dashboard/LifecycleStepper";
+import { AnalyticsCharts } from "@/features/dashboard/AnalyticsCharts";
+import { NoticeBoard } from "@/features/notices/NoticeBoard";
 import {
   Scale, FileText, Award, AlertTriangle, ClipboardCheck,
   Users, RefreshCw, Plus, Search, Download,
@@ -49,11 +52,24 @@ export default function DashboardPage() {
         }
       />
 
-      {/* Owner Dashboard */}
+      {/* 6-Phase Lifecycle Flow & Quick Start Guide */}
+      <LifecycleStepper role={role} />
+
+      {/* Role Metrics */}
       {role === "INSTRUMENT_OWNER" && <OwnerDashboard metrics={metrics} />}
       {role === "LMO" && <LmoDashboard metrics={metrics} />}
       {role === "GATC" && <GatcDashboard metrics={metrics} />}
       {role === "ADMIN" && <AdminDashboard metrics={metrics} />}
+
+      {/* Analytics Visualizations & Department Notice Board */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2">
+          <AnalyticsCharts role={role} />
+        </div>
+        <div className="xl:col-span-1">
+          <NoticeBoard />
+        </div>
+      </div>
 
       {/* Quick Navigation */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
