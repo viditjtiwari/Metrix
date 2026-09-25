@@ -9,8 +9,8 @@
 
 **METRIX** is an enterprise-grade Legal Metrology automation platform designed to digitize the statutory lifecycle for commercial weighing and measuring instruments in accordance with the Legal Metrology Act, 2009 and the Legal Metrology (General) Rules, 2011.
 
-The platform provides end-to-end digital governance across all statutory actors:
-- **Instrument Owners / Traders**: Register instruments with TAC certificates & invoices, compute statutory fees, submit verification/re-verification applications, and upload payment receipts.
+The platform provides end-to-end digital governance across 5 statutory actors:
+- **Instrument Owners / Traders**: Register instruments with TAC certificates & invoices, calculate statutory fees, submit applications, and upload payment receipts.
 - **Legal Metrology Officers (LMOs)**: Conduct field verifications, perform category-specific checklists, log physical observations, endorse GATC laboratory dossiers, verify fees, and issue digitally signed certificates.
 - **Government Approved Test Centres (GATCs)**: Carry out specialized calibration and verification testing on precision instruments, flow meters, and weighbridges, generating formal laboratory dossiers for LMO approval.
 - **State & National Administrators**: Monitor cross-jurisdictional verification queues, inspect real-time system health & PostgreSQL connection pools, audit stakeholder activity, and broadcast gazette notifications.
@@ -18,172 +18,184 @@ The platform provides end-to-end digital governance across all statutory actors:
 
 ---
 
-## 2. Core Legal Metrology Lifecycle
+## 2. Multi-Level Application Lifecycle & Routing
 
-```text
-Instrument Owner / Business
-        ↓
-Instrument Registration (Photos + TAC + Invoice)
-        ↓
-Statutory Fee Calculation (Schedule XII + Rule 14 Late Surcharges)
-        ↓
-Verification / Re-verification Application + Payment Receipt Upload
-        ↓
-LMO Application Review & Fee Verification
-   ├── [Clarification Loop] ↔ Applicant response
-        ↓
-Scheduling & Officer / Test Centre Allocation
-        ↓
-Inspection & Testing:
-   ├── Field Inspection (LMO): Checklists + Observation Logging + Proof Photos
-   └── Lab Calibration (GATC): Calibration Dossier → LMO Statutory Endorsement
-        ↓
-Verification Determination (VERIFIED / REJECTED)
-   ├── If Verified: Tamper-Evident Bilingual PDF Certificate + Level H QR + SHA-256
-   └── If Rejected: Formal Rejection Order with statutory grounds
-        ↓
-Public QR Scanner / Token Verification & Discrepancy Reporting
-        ↓
-Expiry Tracking & Automated 30-Day Renewal Warnings → Re-Verification
+```mermaid
+flowchart TD
+    %% Multi-level routing
+    subgraph L1["Level 1: Trader / Owner Initiation"]
+        A1[Register Instrument<br/>Photos + TAC + Invoice] --> A2[Fee Calculator<br/>Schedule XII + Rule 14]
+        A2 --> A3[Create Application<br/>DRAFT ➔ SUBMITTED]
+        A3 --> A4[Payment Receipt Upload<br/>UTR / Challan Proof]
+    end
+
+    subgraph L2["Level 2: LMO Review & Clarification Loop"]
+        A4 --> B1{LMO Fee Verification}
+        B1 -- Approved --> B2[PAYMENT_VERIFIED ➔ UNDER_REVIEW]
+        B1 -- Rejected --> A4
+        B2 --> B3{Document & TAC Audit}
+        B3 -- Discrepancy --> B4[CLARIFICATION_ASKED]
+        B4 -- Trader Answers --> B2
+        B3 -- Non-Compliant --> R1[REJECTED]
+    end
+
+    subgraph L3["Level 3: Intelligent Routing & Scheduling"]
+        B3 -- Compliant --> C1{Instrument Category}
+        C1 -- Standard Commercial --> C2[Mode: LMO_FIELD<br/>Field Inspection]
+        C1 -- High-Precision / Heavy --> C3[Mode: GATC_LAB<br/>NABL Accredited Lab]
+        C2 --> S1[SCHEDULED<br/>Allocated to Inspector]
+        C3 --> S1
+    end
+
+    subgraph L4["Level 4: Physical Testing & Endorsement"]
+        S1 --> D1[Start Inspection<br/>INSPECTION_IN_PROGRESS]
+        D1 -->|LMO Field| E1[Checklist + Observations<br/>Photo Stamping]
+        D1 -->|GATC Lab| F1[Lab Calibration Testing]
+        F1 --> F2[Submit Calibration Dossier<br/>PENDING_LMO_REVIEW]
+        F2 --> F3{LMO Endorsement<br/>Rule 27 Compliance}
+        F3 -- Approved --> E1
+        F3 -- Rejected --> R1
+    end
+
+    subgraph L5["Level 5: Statutory Certification"]
+        E1 --> G1{Inspection Result}
+        G1 -- Pass --> V1[VERIFIED]
+        G1 -- Fail --> R1
+        V1 --> G2[ReportLab PDF Engine<br/>Bilingual Hindi/English Certificate]
+        G2 --> G3[Level-H QR + SHA-256 Hash<br/>CERTIFICATE_ISSUED]
+    end
+
+    subgraph L6["Level 6: Public Audit & Expiry Tracking"]
+        G3 --> H1[Camera QR Scanner /verify/lookup]
+        H1 --> H2{Tamper / Fraud?}
+        H2 -- Flagged --> H3[Whistleblower Report]
+        H2 -- Genuine --> H4[Authentic Certificate]
+        G3 --> H5[30-Day Renewal Alert]
+        H5 --> H6[1-Click Re-Verification]
+        H6 --> A3
+    end
 ```
 
+### Detailed Level Routing Criteria:
+1. **Level 1 (Trader Initiation)**: Trader submits device particulars, computes Schedule XII fee + late penalty, and uploads payment challan. Status: `DRAFT` ➔ `SUBMITTED` ➔ `PAYMENT_UPLOADED`.
+2. **Level 2 (LMO Regulatory Audit & Clarification)**: Officer verifies receipt (`PAYMENT_VERIFIED` ➔ `UNDER_REVIEW`). If documents are ambiguous, LMO triggers `CLARIFICATION_ASKED`. Trader answers inline, returning application to `UNDER_REVIEW`.
+3. **Level 3 (Category-Based Routing)**:
+   - **`LMO_FIELD`**: Commercial scales, counter/platform scales, beam scales, measures, fuel pumps. Assigned to field LMO.
+   - **`GATC_LAB`**: Mandatory for precision balances, micro-balances, custody transfer meters, Coriolis meters, railway weighbridges. Routed to GATC test centres.
+4. **Level 4 (Testing & GATC Endorsement)**: Field LMO logs checklists and observations. GATC laboratories test under controlled environments, upload NABL calibration certificates, and recommend `CERTIFY`/`REJECT`. Under **Rule 27**, the assigned LMO reviews and legally endorses the dossier (`PENDING_LMO_REVIEW` ➔ `APPROVED`).
+5. **Level 5 (Certification)**: Verified units receive official bilingual PDF certificates with Level H QR codes, anti-copy watermarks, and SHA-256 cryptographic digests.
+6. **Level 6 (Citizen Audit & Expiry)**: Consumers scan QR codes; suspicious instruments can be reported via discrepancy reports. 30 days prior to expiry, traders receive automated renewal notices with 1-click re-verification.
+
 ---
 
-## 3. Technology Stack & Architecture
+## 3. Role-Based Portal User Guide
 
-- **Backend**: Python 3.12 (FastAPI, Pydantic v2, SQLAlchemy 2.x ORM, Alembic migrations, PostgreSQL, Pytest)
+### 🧑‍💼 Instrument Owner / Trader Guide
+* **Account**: `trader.owner@metrix.gov.in` / `Owner@123`
+1. **Register Instruments (`/instruments`)**: Click *"Register Instrument"*, fill details (serial number, model, capacity), upload device photos, attach TAC certificate and purchase invoice. For fleets, download the CSV template and batch upload up to 100 devices.
+2. **Fee Calculator (`/fees`)**: Select instrument type, capacity, and delay days to view the statutory Schedule XII base fee and Rule 14 compounding late fee (+50% per delayed quarter).
+3. **Submit Verification (`/applications`)**: Click *"New Application"*, select instrument and verification type (`INITIAL` or `RE_VERIFICATION`), and submit.
+4. **Upload Payment Receipt**: Open application, scroll to *Payment Details*, and submit your bank challan/UTR reference and receipt image.
+5. **Respond to Clarifications**: If an officer requests information, an alert appears on your application. Enter your answers directly in the clarification banner.
+6. **View & Re-Verify Certificates (`/certificates`)**: Download signed bilingual PDFs. When an instrument nears expiry (30-day banner), click *"Re-verify Instrument"* to instantly start a renewal application.
+
+---
+
+### 👮 Legal Metrology Officer (LMO) Guide
+* **Account**: `lmo.officer@metrix.gov.in` / `Officer@123`
+1. **Review Incoming Queue (`/applications`)**: Filter by `PAYMENT_UPLOADED` or `UNDER_REVIEW`. Open application to inspect owner KYC (GSTIN/PAN), instrument photos, and TAC documents.
+2. **Verify Fee Payment**: Review uploaded receipt and UTR in the *Payment Card*. Click *"Verify Payment"* (or reject with remarks).
+3. **Request Clarification / Schedule**:
+   - If documents are insufficient, click *"Request Clarification"*.
+   - If valid, click *"Schedule Inspection"*, choose mode (`LMO_FIELD` or `GATC_LAB`), date, time slot, and assign an inspector.
+4. **Conduct Field Inspection (`/inspections`)**:
+   - Open assigned inspection, click *"Start Inspection"*.
+   - Complete the mandatory pre-inspection checklist (visual, zero-load, repeatability).
+   - Enter observed values vs statutory standard values.
+   - Designate the official certificate stamping photo and submit determination (`VERIFIED` or `REJECTED`).
+5. **Endorse GATC Laboratory Dossiers**:
+   - Filter queue for `PENDING_LMO_REVIEW`.
+   - Open *Review GATC Calibration Dossier* to inspect lab observations, temperature/humidity, and NABL certificates.
+   - Endorse (`APPROVE`) to issue a statutory certificate or `REJECT` with legal grounds under Rule 27.
+
+---
+
+### 🔬 Government Approved Test Centre (GATC) Guide
+* **Account**: `gatc.lab@metrix.gov.in` / `Lab@123`
+1. **Access Lab Queue (`/inspections`)**: View precision balances, weighbridges, and flow meters routed to your test centre.
+2. **Execute Lab Calibration**: Click *"Start Inspection"*, conduct NABL calibration tests under controlled ambient conditions.
+3. **Submit Calibration Dossier**: Click *"Submit GATC Report"*:
+   - Enter laboratory test report URL / calibration certificate reference.
+   - Record ambient temperature, humidity, reference standards, and test observations.
+   - Choose formal recommendation (`CERTIFY` or `REJECT`) and submit for LMO signoff.
+
+---
+
+### 🛡️ Administrator Guide
+* **Account**: `admin@metrix.gov.in` / `Admin@123`
+1. **Live Infrastructure Health (`/admin/system`)**: Monitor real-time API Gateway ping, PostgreSQL connection pool metrics, security encryption engine, and multi-tenant user distributions.
+2. **User & Officer Management (`/admin/users`)**: Provision LMO officers and GATC testing centres, activate/deactivate accounts, and edit jurisdictions.
+3. **Public Notice Board (`/notices`)**: Publish and manage official gazette notifications and circulars displayed on the citizen landing page.
+4. **Operations & Reports (`/reports` & `/analytics`)**: Generate regulatory CSV exports and analyze verification throughput, rejection reasons, and expiry forecasts.
+
+---
+
+### 🌐 Public Consumer & Enforcement Guide
+* **No Login Required**
+1. **Camera QR Code Scanner (`/verify/lookup`)**: Open the scanner on any mobile browser or desktop webcam. Position the certificate's Level H QR code in the viewport.
+2. **Certificate Search**: Enter the Certificate Identification Number (e.g. `CERT-2026-...`) to view validity status, owner, inspector, and valid-until date.
+3. **Anti-Tampering Integrity**: Check the cryptographic SHA-256 fingerprint to verify the physical certificate matches the government database.
+4. **Report Discrepancy**: Click *"Report Suspicious Certificate"* to lodge a whistleblower report for tampered, cloned, or malfunctioning equipment.
+
+---
+
+## 4. Technology Stack & Constraints
+
+- **Backend**: Python 3.12 (FastAPI, Pydantic v2, SQLAlchemy 2.x, Alembic, PostgreSQL, Pytest)
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS, Redux Toolkit, RTK Query
-- **PDF & Digital Certificates**: ReportLab PDF Engine (bilingual certificates and inspection reports)
-- **Security & QR**: SHA-256 cryptographic digests, `qrcode` (Error Correction Level H), Bcrypt, JWT bearer tokens
-- **Public Verification & Scanning**: `html5-qrcode` real-time camera barcode scanner with canvas overlays
-- **Cloud Storage**: Cloudinary REST API / SDK with transparent local disk filesystem fallback
-- **Architecture**: Software-Only Modular Monolith (Strictly compliant with hackathon constraints: no Docker, Kubernetes, Celery, Redis, or microservices)
-
----
-
-## 4. Comprehensive Feature Inventory
-
-### A. Authentication, RBAC & KYC
-- **Triple Auth Engine**: Passwords with bcrypt hashing, passwordless Email OTP (SMTP), and Google OAuth 2.0.
-- **4 Strict Roles**: `INSTRUMENT_OWNER`, `LMO` (Legal Metrology Officer), `GATC` (Government Approved Test Centre), `ADMIN`.
-- **Trader KYC Integration**: Mandatory GSTIN (15-character statutory format), PAN card, trade license number, and business classification during registration and profile management.
-
-### B. Instrument Lifecycle & Batch Onboarding
-- **Device Registration**: Register single instruments with serial numbers, model details, capacity ranges, and manufacturer specifications.
-- **Multi-Photo Proof**: Upload up to 3 device images (front, nameplate/weights stamp, seal) with Cloudinary/local storage support.
-- **Statutory Document Storage**: Attach Type Approval Certificate (TAC) and purchase invoice URLs.
-- **High-Throughput CSV Batch Upload**: Bulk register up to 100 instruments in a single CSV transaction.
-- **Batch CSV Template Engine**: Download official CSV template (`/instruments/csv-template`) directly with pre-filled headers and validation examples.
-
-### C. Statutory Fee Calculation Engine (Rule 14 & Schedule XII)
-- **Dedicated Interactive Calculator (`/fees`)**:
-  - Full Schedule XII fee table covering Weighing Instruments (Classes I–IV), Weights, Measures of Length & Capacity, Petroleum Dispensers, and Flow Meters.
-  - Dynamic capacity units (`kg`, `g`, `tonne`, `litre`, `no_unit`).
-  - Compounding quarterly late fee calculations under Rule 14(2) (+50% per quarter or fraction thereof delayed past statutory expiry).
-  - Detailed legal reference citations and statutory breakdown.
-
-### D. Verification Applications & Payment Workflow
-- **Application Flow**: Submit Initial Verification or Re-Verification with instant fee quote.
-- **Payment Receipt Submission**: Applicants upload UTR / transaction references and receipt proof.
-- **LMO Payment Verification**: Officers inspect receipt proof, mark payments as `VERIFIED` or `FAILED`, and record remarks.
-- **Two-Way Clarification Loop**:
-  - LMO requests clarifications on documentation or specs (`CLARIFICATION_ASKED`).
-  - Applicant submits answers directly in the portal, automatically returning the application to `UNDER_REVIEW`.
-
-### E. Inspections, Checklists & Laboratory Calibrations
-- **Inspection Queue (`/inspections`)**: Real-time queue filtered by status (`SCHEDULED`, `VERIFIED`, `REJECTED`) and *"Only My Assigned"* toggle.
-- **Pre-Inspection Checklist**: Mandatory verification checklists tailored by instrument type (visual inspection, zero-load test, eccentric loading, repeatability, sealing).
-- **Physical Observation Logging**: Record observed vs standard values, tolerances, and pass/fail criteria per parameter.
-- **GATC Laboratory Calibration Dossier**:
-  - GATC laboratories record temperature, humidity, reference standards, and test observations.
-  - Upload NABL-accredited calibration certificates and submit formal recommendations (`CERTIFY` / `REJECT`).
-- **LMO Statutory Endorsement**:
-  - LMO officers review submitted GATC dossiers in a dedicated audit modal.
-  - Statutory approval or rejection with legal remarks.
-- **ReportLab Inspection PDF Reports**:
-  - Instant PDF download (`/api/v1/inspections/{id}/report/download`) detailing inspection particulars, observations, and verifier credentials.
-
-### F. Bilingual Tamper-Evident Certificates & QR Security
-- **Official Bilingual PDF (ReportLab)**:
-  - Formal Government of India / Department of Consumer Affairs header (*भारत सरकार / उपभोक्ता मामले विभाग*).
-  - Gold and navy security borders with anti-counterfeit 45° canvas watermark.
-  - Embedded physical device inspection stamping photo chosen by the officer.
-  - Embedded Level H QR Code and tamper-evident SHA-256 digest block.
-- **Live Expiring Certificates Queue**: Filter certificates expiring within 30 days (`/certificates?tab=expiring`) to proactively trigger renewals.
-- **One-Click Re-Verification Action**: Direct button on certificate dossier pre-populating a re-verification application with past instrument details.
-
-### G. Public QR Scanner & Citizen Discrepancy Reporting
-- **Public Portal (`/verify/lookup` & `/verify/[token]`)**:
-  - Live webcam and smartphone camera QR code scanner.
-  - Manual Certificate Identification Number search.
-  - Complete public verification dossier showing validity status, instrument details, owner name, and officer seal.
-- **Citizen Discrepancy / Whistleblower Reporting**:
-  - Consumers can report suspicious, tampered, or expired certificates directly from the verification view.
-  - Reports enter the regulatory inspection stream for administrative review.
-
-### H. System Health, Tenancy & Visual Analytics
-- **Live System Health Monitor (`/admin/system`)**: Real-time monitoring of API Gateway latency, PostgreSQL connection pool metrics, security subsystem status, and tenancy role distribution.
-- **Operations & Regulatory Analytics (`/analytics` & `/dashboard`)**: Interactive charts for verification volume trends, instrument categories, pass/fail ratios, and certificate expiry forecasts.
-- **Audit & Notice Management (`/notices`)**: Administrative gazette notice publisher displaying real-time alerts across the public portal.
+- **Certificates & QR**: ReportLab A4 PDF Engine (bilingual Hindi/English), `qrcode` (Level H), SHA-256 Digest
+- **Camera Stream Scanner**: `html5-qrcode` real-time camera decoder
+- **Architecture**: Software-Only Modular Monolith (Strictly No Docker, Kubernetes, Celery, or Redis)
+- **Strict Line Limits**: Python <= 500 lines, TS/TSX <= 300 lines, Tests <= 500 lines.
 
 ---
 
 ## 5. Local Setup & Execution Guide
 
 ### Prerequisites
-- **Python 3.10+** (Python 3.12 recommended)
-- **Node.js 18+** (Node.js 20 LTS recommended)
-- **PostgreSQL 14+** running locally on port 5432 (database: `metrix_db`)
+- Python 3.10+ (Python 3.12 recommended) & Node.js 18+ (Node.js 20 LTS recommended)
+- PostgreSQL 14+ running locally on port 5432 (database: `metrix_db`)
 
 ### 1. Backend Setup
 ```bash
 cd backend
-
-# Create and activate virtual environment
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1    # On Windows
-# source .venv/bin/activate     # On Linux/macOS
-
-# Install dependencies
+.\.venv\Scripts\Activate.ps1    # On Windows (or source .venv/bin/activate on Unix)
 pip install -r requirements.txt
-
-# Run migrations
 alembic upgrade head
-
-# Seed fresh test accounts and demo data
 python app/scripts/seed_dev_users.py
-
-# Start FastAPI server
 uvicorn app.main:app --reload --port 8000
 ```
-- **API Swagger Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Health Endpoint**: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
+- Swagger API Docs: `http://localhost:8000/docs` | Health Check: `http://localhost:8000/api/v1/health`
 
 ### 2. Frontend Setup
-In a new terminal:
 ```bash
 cd frontend
-
-# Install npm dependencies
 npm install
-
-# Start Next.js development server
 npm run dev
 ```
-- **Web Application Portal**: [http://localhost:3000](http://localhost:3000)
-- **Public QR Scanner**: [http://localhost:3000/verify/lookup](http://localhost:3000/verify/lookup)
-- **Statutory Fee Calculator**: [http://localhost:3000/fees](http://localhost:3000/fees)
+- Web Application: `http://localhost:3000` | Fee Calculator: `http://localhost:3000/fees` | QR Scanner: `http://localhost:3000/verify/lookup`
 
 ---
 
 ## 6. Seeded Demonstration Accounts
 
-| Role | Email Address | Password | Key Responsibilities & Capabilities |
+| Role | Email Address | Password | Primary Accessible Portals |
 | :--- | :--- | :--- | :--- |
-| **Administrator** | `admin@metrix.gov.in` | `Admin@123` | System oversight, connection pool health, notice board, global user management |
-| **Legal Metrology Officer (LMO)** | `lmo.officer@metrix.gov.in` | `Officer@123` | Application review, fee verification, field checklists, GATC dossier endorsement, certificate issuance |
-| **GATC Test Centre** | `gatc.lab@metrix.gov.in` | `Lab@123` | Laboratory calibration testing, observation records, calibration certificate submission |
-| **Instrument Owner** | `trader.owner@metrix.gov.in` | `Owner@123` | Instrument onboarding, fee calculation, application submission, payment receipt upload, certificate tracking |
+| **Administrator** | `admin@metrix.gov.in` | `Admin@123` | System Health, User Management, Analytics, Notice Board |
+| **Legal Metrology Officer (LMO)** | `lmo.officer@metrix.gov.in` | `Officer@123` | Inspections Queue, GATC Review, Fee Verification, Certificate Issuance |
+| **GATC Test Centre** | `gatc.lab@metrix.gov.in` | `Lab@123` | Laboratory Calibrations Queue, Calibration Dossier Upload Modal |
+| **Instrument Owner** | `trader.owner@metrix.gov.in` | `Owner@123` | Instrument Registration, Fee Calculator, Payment Receipts, Re-Verification |
 
 ---
 
@@ -218,10 +230,10 @@ npm run dev
 ## 8. REST API Summary (70+ Endpoints)
 
 - **Authentication & KYC**: `POST /auth/register`, `POST /auth/login`, `GET|PATCH /auth/me`, `PATCH /auth/me/password`, `POST /auth/otp/send`, `POST /auth/otp/verify`, `GET|POST /auth/google*`
-- **Fee Engine**: `GET /fees/calculate`
+- **Statutory Fee Engine**: `GET /fees/calculate`
 - **Instruments**: `POST|GET /instruments`, `GET /instruments/csv-template`, `POST /instruments/batch-upload`, `GET|PATCH /instruments/{id}`, `PATCH /instruments/{id}/deactivate`, `POST|DELETE /instruments/{id}/images*`
 - **Applications & Payments**: `POST|GET /applications`, `GET|DELETE /applications/{id}`, `PATCH /applications/{id}/status`, `PATCH /applications/{id}/schedule`, `PATCH /applications/{id}/assignment`, `POST /applications/{id}/payment-receipt`, `POST /applications/{id}/verify-payment`, `POST /applications/{id}/request-clarification`, `POST /applications/{id}/submit-clarification`
-- **Inspections & Laboratory Calibrations**: `GET /inspections`, `GET /inspections/{id}`, `POST /applications/{id}/inspection`, `POST|GET /inspections/{id}/observations`, `PATCH /inspections/{id}/result`, `POST /inspections/{id}/images`, `PATCH /inspections/{id}/certificate-image`, `POST /inspections/{id}/gatc-report`, `PATCH /inspections/{id}/lmo-approval`, `GET /inspections/{id}/report/download`
+- **Inspections & Calibrations**: `GET /inspections`, `GET /inspections/{id}`, `POST /applications/{id}/inspection`, `POST|GET /inspections/{id}/observations`, `PATCH /inspections/{id}/result`, `POST /inspections/{id}/images`, `PATCH /inspections/{id}/certificate-image`, `POST /inspections/{id}/gatc-report`, `PATCH /inspections/{id}/lmo-approval`, `GET /inspections/{id}/report/download`
 - **Certificates & Verification**: `POST|GET /applications/{id}/certificate`, `GET /certificates`, `GET /certificates/{id}`, `GET /certificates/{id}/download`, `GET /certificates/expiring`, `GET /certificates/expired`, `GET /public/certificates/verify/{token}`, `GET /public/certificates/lookup/{number}`, `POST /certificates/report-discrepancy`
 - **System Health & Governance**: `GET /health`, `GET /dashboard/summary`, `GET /dashboard/charts`, `GET|POST|PATCH /notifications*`, `GET|POST|DELETE /notices*`, `GET /reports/*`
 
@@ -239,8 +251,4 @@ npm run dev
   cd frontend
   npm run build
   ```
-- **Mandatory File Line Limits**:
-  - Python files: strictly **<= 500 lines** per file.
-  - TypeScript/TSX files: strictly **<= 300 lines** per file.
-  - Test files: strictly **<= 500 lines** per file.
-- **Architectural Principle**: Strict separation of concerns (Routers → Services → Repositories → ORM Models). Models are never directly exposed to API consumers.
+- **Mandatory File Line Limits**: Strictly <= 500 lines for Python, strictly <= 300 lines for TS/TSX.
