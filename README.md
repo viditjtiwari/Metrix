@@ -18,7 +18,7 @@ The platform provides end-to-end digital governance across 5 statutory actors:
 
 ---
 
-## 2. Multi-Level Application Lifecycle & Routing
+## 2. Comprehensive Application Lifecycle & Multi-Level Routing
 
 ```mermaid
 flowchart TD
@@ -76,15 +76,86 @@ flowchart TD
     end
 ```
 
-### Detailed Level Routing Criteria:
-1. **Level 1 (Trader Initiation)**: Trader submits device particulars, computes Schedule XII fee + late penalty, and uploads payment challan. Status: `DRAFT` ➔ `SUBMITTED` ➔ `PAYMENT_UPLOADED`.
-2. **Level 2 (LMO Regulatory Audit & Clarification)**: Officer verifies receipt (`PAYMENT_VERIFIED` ➔ `UNDER_REVIEW`). If documents are ambiguous, LMO triggers `CLARIFICATION_ASKED`. Trader answers inline, returning application to `UNDER_REVIEW`.
-3. **Level 3 (Category-Based Routing)**:
-   - **`LMO_FIELD`**: Commercial scales, counter/platform scales, beam scales, measures, fuel pumps. Assigned to field LMO.
-   - **`GATC_LAB`**: Mandatory for precision balances, micro-balances, custody transfer meters, Coriolis meters, railway weighbridges. Routed to GATC test centres.
-4. **Level 4 (Testing & GATC Endorsement)**: Field LMO logs checklists and observations. GATC laboratories test under controlled environments, upload NABL calibration certificates, and recommend `CERTIFY`/`REJECT`. Under **Rule 27**, the assigned LMO reviews and legally endorses the dossier (`PENDING_LMO_REVIEW` ➔ `APPROVED`).
-5. **Level 5 (Certification)**: Verified units receive official bilingual PDF certificates with Level H QR codes, anti-copy watermarks, and SHA-256 cryptographic digests.
-6. **Level 6 (Citizen Audit & Expiry)**: Consumers scan QR codes; suspicious instruments can be reported via discrepancy reports. 30 days prior to expiry, traders receive automated renewal notices with 1-click re-verification.
+### A. Operational Levels Explained
+
+1. **Level 1 — Trader Initiation & Fee Quotation**
+   - **Trigger**: Trader onboards an instrument on `/instruments`, attaching specifications, front/nameplate photos, Type Approval Certificate (TAC), and purchase invoice.
+   - **Fee Computation**: System queries `GET /api/v1/fees/calculate` applying Schedule XII base fees plus compounding quarterly late surcharges (+50% per delayed quarter under Rule 14).
+   - **Submission**: Trader submits application (`DRAFT` ➔ `SUBMITTED`) and deposits statutory fees via government treasury/challan, uploading the UTR/receipt proof (`PAYMENT_UPLOADED`).
+
+2. **Level 2 — LMO Regulatory Audit & The Clarification Loop**
+   - **Fee Verification**: The Legal Metrology Officer reviews the uploaded receipt. If valid, the status transitions to `PAYMENT_VERIFIED` ➔ `UNDER_REVIEW`. If rejected, it bounces back to the trader with reason notes.
+   - **Two-Way Clarification**: If TAC certificates, serial numbers, or premises details are ambiguous, the LMO triggers `CLARIFICATION_ASKED` with specific questions. The trader receives an alert, submits clarifications inline, and the application returns to `UNDER_REVIEW`.
+   - **Rejection**: If the instrument is counterfeit or non-compliant, the officer terminates the application with a formal rejection order (`REJECTED`).
+
+3. **Level 3 — Intelligent Routing & Inspector Allocation**
+   - The system inspects the instrument type against statutory rules (Schedule III & GATC Rules 2013) to determine the inspection mode:
+     - **`LMO_FIELD` (Field Inspection)**: Commercial scales, counter scales, platform scales, beam scales, measures, fuel pumps. Routed to a jurisdictional LMO field officer for on-site inspection.
+     - **`GATC_LAB` (Laboratory Calibration)**: High-precision or specialized equipment (analytical/micro balances, custody transfer meters, Coriolis meters, railway weighbridges). Routed to a Government Approved Test Centre.
+   - The application transitions to `SCHEDULED` with allocated inspector, date, and time slot.
+
+4. **Level 4 — Physical Testing, Observations & Statutory Endorsement**
+   - The assigned inspector starts inspection (`INSPECTION_IN_PROGRESS`).
+   - **Path A (LMO Field)**: LMO executes instrument checklists (visual, zero-load, repeatability), logs observed vs standard values, uploads proof photos, selects the official certificate stamping photo, and determines pass/fail.
+   - **Path B (GATC Lab)**: GATC laboratory tests under controlled temperature/humidity, uploads NABL-accredited calibration certificates, and recommends `CERTIFY` or `REJECT`.
+   - **Statutory LMO Endorsement (Rule 27)**: Because only gazetted government officers hold statutory certification powers, the dossier is routed to an LMO under `PENDING_LMO_REVIEW`. The LMO audits the lab findings and endorses (`APPROVED`) or rejects (`REJECTED`).
+
+5. **Level 5 — Statutory Certification & Tamper-Evident Stamping**
+   - Upon verification (`VERIFIED`), the automated ReportLab PDF engine generates a bilingual certificate (*भारत सरकार / उपभोक्ता मामले विभाग*).
+   - Embeds a 45° anti-copy canvas watermark, officer-selected inspection photo, Level H QR code, and SHA-256 integrity hash.
+   - Transitions to `CERTIFICATE_ISSUED`.
+
+6. **Level 6 — Public Verification, Citizen Reporting & Expiry Cycle**
+   - Citizens and enforcement officials scan the certificate QR code via `/verify/lookup`.
+   - The system validates the SHA-256 fingerprint against the database to confirm authenticity.
+   - Citizens can lodge whistleblower discrepancy reports if the equipment appears tampered.
+   - At 30 days prior to expiry (12 or 24 months per Rule 13), automated renewal notices trigger 1-click re-verification.
+
+---
+
+### B. State Machine Transition Matrix
+
+| Current Status | Allowed Next Statuses | Acting Role | Action / Endpoint | Business Condition |
+|---|---|---|---|---|
+| `DRAFT` | `SUBMITTED` | Trader | `POST /applications` | All required device fields & verification type provided. |
+| `SUBMITTED` | `PAYMENT_UPLOADED`, `UNDER_REVIEW`, `REJECTED` | Trader / LMO | `POST /applications/{id}/payment-receipt` | Trader uploads challan proof / UTR reference. |
+| `PAYMENT_UPLOADED` | `PAYMENT_VERIFIED`, `SUBMITTED`, `REJECTED` | LMO / Admin | `POST /applications/{id}/verify-payment` | LMO verifies payment bank reference or rejects challan. |
+| `PAYMENT_VERIFIED` | `UNDER_REVIEW` | System / LMO | Automated transition | Valid payment confirmed. |
+| `UNDER_REVIEW` | `SCHEDULED`, `CLARIFICATION_ASKED`, `REJECTED` | LMO / Admin | `PATCH /applications/{id}/schedule` | Inspector, date, slot, and mode (`LMO_FIELD` / `GATC_LAB`) assigned. |
+| `CLARIFICATION_ASKED` | `UNDER_REVIEW`, `REJECTED` | Trader | `POST /applications/{id}/submit-clarification` | Trader supplies requested documentation or clarification. |
+| `SCHEDULED` | `INSPECTION_IN_PROGRESS` | LMO / GATC | `POST /applications/{id}/inspection` | Inspector begins on-site or laboratory inspection. |
+| `INSPECTION_IN_PROGRESS` | `INSPECTION_COMPLETED` | LMO / GATC | `PATCH /inspections/{id}/result` | Checklists completed and observation logs recorded. |
+| `INSPECTION_COMPLETED` | `VERIFIED`, `REJECTED` | LMO | `PATCH /inspections/{id}/lmo-approval` | Physical observations pass tolerances or GATC dossier endorsed. |
+| `VERIFIED` | `CERTIFICATE_ISSUED` | System | `POST /applications/{id}/certificate` | Automated bilingual ReportLab PDF and Level-H QR generated. |
+| `CERTIFICATE_ISSUED` | *Terminal State* | — | `GET /certificates/{id}/download` | Active certificate in circulation until statutory expiry. |
+| `REJECTED` | *Terminal State* | — | — | Formal statutory rejection order recorded. |
+
+---
+
+### C. Statutory Routing Rules Engine
+
+The system automatically enforces regulatory routing under **Schedule III of the Legal Metrology Act, 2009** and the **GATC Rules, 2013**:
+
+```text
+                                [Application Submitted]
+                                           │
+                        Is Instrument in GATC Mandatory List?
+                                           │
+                     ┌─────────────────────┴─────────────────────┐
+                    YES                                          NO
+                     │                                           │
+         [Mode: GATC_LAB]                             [Mode: LMO_FIELD]
+   • Analytical & Micro Balances               • Counter, Platform & Beam Scales
+   • Precision Balances                        • Commercial Electronic Scales
+   • Coriolis & Ultrasonic Meters              • Petrol / Diesel / CNG Dispensers
+   • Custody Transfer Meters                   • Commercial Length & Capacity Measures
+   • Railway Weighbridges                      • Water Meters & Storage Tanks
+                     │                                           │
+        Routed to Accredited Lab                    Routed to Jurisdictional LMO
+```
+
+* **Mandatory GATC Instruments**: `ANALYTICAL_BALANCE`, `MICRO_BALANCE`, `PRECISION_BALANCE`, `MEDICAL_BABY_SCALE`, `HOSPITAL_SCALE`, `CORIOLIS_FLOW_METER`, `ULTRASONIC_FLOW_METER`, `CUSTODY_TRANSFER_METER`, `RAILWAY_WEIGHBRIDGE`, `AIRCRAFT_FUEL_DISPENSER`, `ENERGY_METER`, `RADIATION_METER`, `SPEEDOMETER`, `BREATH_ALCOHOL_ANALYZER`.
+* **Validity Periods (Rule 13)**: 12 months for commercial scales, precision balances, fuel dispensers, and weighbridges; 24 months for water meters, storage tanks, and measures of length.
 
 ---
 
