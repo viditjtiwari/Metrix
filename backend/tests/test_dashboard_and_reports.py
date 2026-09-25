@@ -313,3 +313,60 @@ def test_reports_export_certificates_and_expiries_csv(
     expiry_csv = expiry_res.text
     assert "METRIX-CERT-2025-000099" in expiry_csv
     assert "EXPIRED" in expiry_csv
+
+
+def test_dynamic_charts_rbac_series(
+    client: TestClient,
+    owner_headers: dict,
+    lmo_headers: dict,
+    gatc_headers: dict,
+    admin_headers: dict,
+    populated_test_environment: dict,
+):
+    """Verify that every RBAC role receives dynamic, real-time chart datasets."""
+    # 1. Owner Charts
+    owner_res = client.get("/api/v1/dashboard/charts", headers=owner_headers)
+    assert owner_res.status_code == 200
+    owner_data = owner_res.json()
+    assert owner_data["role"] == "INSTRUMENT_OWNER"
+    assert "monthly_trend" in owner_data
+    assert "applications_by_status" in owner_data
+    assert "certificate_health" in owner_data
+    assert "instruments_by_type" in owner_data
+    assert "verification_outcomes" in owner_data
+
+    # 2. LMO Charts
+    lmo_res = client.get("/api/v1/dashboard/charts", headers=lmo_headers)
+    assert lmo_res.status_code == 200
+    lmo_data = lmo_res.json()
+    assert lmo_data["role"] == "LMO"
+    assert "monthly_trend" in lmo_data
+    assert "applications_by_status" in lmo_data
+    assert "verification_outcomes" in lmo_data
+    assert "inspection_modes" in lmo_data
+    assert "instruments_by_type" in lmo_data
+    assert "stamping_quarters" in lmo_data
+
+    # 3. GATC Charts
+    gatc_res = client.get("/api/v1/dashboard/charts", headers=gatc_headers)
+    assert gatc_res.status_code == 200
+    gatc_data = gatc_res.json()
+    assert gatc_data["role"] == "GATC"
+    assert "monthly_trend" in gatc_data
+    assert "applications_by_status" in gatc_data
+    assert "verification_outcomes" in gatc_data
+    assert "instruments_by_type" in gatc_data
+
+    # 4. Admin Charts
+    admin_res = client.get("/api/v1/dashboard/charts", headers=admin_headers)
+    assert admin_res.status_code == 200
+    admin_data = admin_res.json()
+    assert admin_data["role"] == "ADMIN"
+    assert "monthly_trend" in admin_data
+    assert "applications_by_status" in admin_data
+    assert "users_by_role" in admin_data
+    assert "instruments_by_type" in admin_data
+    assert "certificate_health" in admin_data
+    assert "inspection_modes" in admin_data
+    assert "verification_outcomes" in admin_data
+

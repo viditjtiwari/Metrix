@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { InspectionResult } from "@/types";
-import { useSubmitInspectionResultMutation } from "./applicationApi";
+import { useSubmitInspectionChecklistMutation } from "./applicationApi";
 
 interface InspectionResultModalProps {
   inspectionId: number;
@@ -17,140 +17,208 @@ export function InspectionResultModal({
   onClose,
   onSuccess,
 }: InspectionResultModalProps) {
+  const [sealIntact, setSealIntact] = useState(true);
+  const [displayReadable, setDisplayReadable] = useState(true);
+  const [levelingOk, setLevelingOk] = useState(true);
+  const [powerStable, setPowerStable] = useState(true);
+  const [overallCondition, setOverallCondition] = useState<"Good" | "Fair" | "Poor">("Good");
+
+  const [zeroError, setZeroError] = useState("0.0");
+  const [eccentricityPassed, setEccentricityPassed] = useState(true);
+  const [repeatabilityPassed, setRepeatabilityPassed] = useState(true);
+  const [discriminationPassed, setDiscriminationPassed] = useState(true);
+
+  const [sealNumber, setSealNumber] = useState("");
   const [result, setResult] = useState<InspectionResult>("VERIFIED");
   const [remarks, setRemarks] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const [submitResult, { isLoading }] = useSubmitInspectionResultMutation();
+  const [submitChecklist, { isLoading }] = useSubmitInspectionChecklistMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    if (result === "VERIFIED" && !sealNumber.trim()) {
+      setErrorMsg("Physical seal number is required when verification passes.");
+      return;
+    }
+
     try {
-      await submitResult({
+      await submitChecklist({
         inspectionId,
         applicationId,
         data: {
+          physical_inspection: {
+            seal_intact: sealIntact,
+            display_readable: displayReadable,
+            leveling_ok: levelingOk,
+            power_stable: powerStable,
+            overall_condition: overallCondition,
+            remarks: remarks.trim() || undefined,
+          },
+          metrological_tests: {
+            zero_error_observed: zeroError.trim() || "0.0",
+            zero_error_passed: true,
+            span_tests: [{
+              load_percentage: 100,
+              standard_value: "Capacity",
+              observed_value: "Within MPE",
+              is_passed: result === "VERIFIED",
+            }],
+            eccentricity_passed: eccentricityPassed,
+            repeatability_passed: repeatabilityPassed,
+            discrimination_passed: discriminationPassed,
+          },
+          seal_number: result === "VERIFIED" ? sealNumber.trim() : undefined,
           result,
-          remarks: remarks.trim() || undefined,
+          result_remarks: remarks.trim() || undefined,
         },
       }).unwrap();
       onSuccess();
       onClose();
     } catch (err: unknown) {
-      const errDetail =
-        (err as { data?: { detail?: string } })?.data?.detail ||
-        "Failed to submit inspection result.";
-      setErrorMsg(errDetail);
+      setErrorMsg(
+        (err as { data?: { detail?: string } })?.data?.detail || "Failed to submit inspection checklist."
+      );
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 className="text-base font-semibold text-slate-900">
-            Finalize Verification Inspection
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition"
-          >
-            ✕
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs overflow-y-auto">
+      <div className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl my-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Government-Standard Inspection Report</h3>
+            <p className="text-[11px] text-slate-500">Legal Metrology (General) Rules, 2011</p>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>
         </div>
 
         {errorMsg && (
-          <div className="mt-4 rounded-lg bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700">
+          <div className="mt-3 rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700">
             {errorMsg}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4 text-xs">
-          <div>
-            <label className="block font-medium text-slate-700 mb-2">
-              Verification Determination *
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label
-                className={`flex items-center p-3 rounded-lg border cursor-pointer transition ${
-                  result === "VERIFIED"
-                    ? "border-emerald-500 bg-emerald-50/50 text-emerald-900 font-semibold"
-                    : "border-slate-200 hover:bg-slate-50 text-slate-700"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="result"
-                  value="VERIFIED"
-                  checked={result === "VERIFIED"}
-                  onChange={() => setResult("VERIFIED")}
-                  className="mr-2 text-emerald-600 focus:ring-emerald-500"
-                />
-                VERIFIED (Pass)
+        <form onSubmit={handleSubmit} className="mt-3 space-y-3 text-xs">
+          {/* Section 1: Physical Checklist */}
+          <div className="rounded-lg border border-slate-200 p-3 space-y-2 bg-slate-50/50">
+            <span className="font-bold text-slate-800 uppercase tracking-wider text-[10px] block">
+              1. Physical Inspection Checklist
+            </span>
+            <div className="grid grid-cols-2 gap-2 text-slate-700">
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" checked={sealIntact} onChange={(e) => setSealIntact(e.target.checked)} className="rounded text-emerald-600" />
+                Seal Intact
               </label>
-
-              <label
-                className={`flex items-center p-3 rounded-lg border cursor-pointer transition ${
-                  result === "REJECTED"
-                    ? "border-rose-500 bg-rose-50/50 text-rose-900 font-semibold"
-                    : "border-slate-200 hover:bg-slate-50 text-slate-700"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="result"
-                  value="REJECTED"
-                  checked={result === "REJECTED"}
-                  onChange={() => setResult("REJECTED")}
-                  className="mr-2 text-rose-600 focus:ring-rose-500"
-                />
-                REJECTED (Fail)
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" checked={displayReadable} onChange={(e) => setDisplayReadable(e.target.checked)} className="rounded text-emerald-600" />
+                Display Readable
               </label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" checked={levelingOk} onChange={(e) => setLevelingOk(e.target.checked)} className="rounded text-emerald-600" />
+                Leveling & Alignment
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" checked={powerStable} onChange={(e) => setPowerStable(e.target.checked)} className="rounded text-emerald-600" />
+                Power Stable
+              </label>
+            </div>
+            <div className="pt-1 flex items-center gap-2">
+              <label className="font-medium text-slate-600">Overall Condition:</label>
+              <select
+                value={overallCondition}
+                onChange={(e) => setOverallCondition(e.target.value as "Good" | "Fair" | "Poor")}
+                className="h-7 rounded border border-slate-300 px-2 text-xs bg-white"
+              >
+                <option value="Good">Good</option>
+                <option value="Fair">Fair</option>
+                <option value="Poor">Poor</option>
+              </select>
             </div>
           </div>
 
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Final Decision Remarks / Justification
-            </label>
-            <textarea
-              rows={3}
-              placeholder={
-                result === "VERIFIED"
-                  ? "e.g. Instrument meets all legal metrological standards and error limits."
-                  : "e.g. Maximum permissible error exceeded during capacity span check."
-              }
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-            />
+          {/* Section 2: Metrological Tests */}
+          <div className="rounded-lg border border-slate-200 p-3 space-y-2 bg-slate-50/50">
+            <span className="font-bold text-slate-800 uppercase tracking-wider text-[10px] block">
+              2. Metrological Tests (OIML R76)
+            </span>
+            <div className="grid grid-cols-2 gap-2 text-slate-700">
+              <div>
+                <label className="block text-slate-600 mb-0.5">Zero Error</label>
+                <input
+                  type="text"
+                  value={zeroError}
+                  onChange={(e) => setZeroError(e.target.value)}
+                  placeholder="0.0g"
+                  className="w-full h-7 rounded border border-slate-300 px-2 text-xs bg-white"
+                />
+              </div>
+              <div className="space-y-1 pt-3">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked={eccentricityPassed} onChange={(e) => setEccentricityPassed(e.target.checked)} className="rounded text-emerald-600" />
+                  Eccentricity Passed
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked={repeatabilityPassed} onChange={(e) => setRepeatabilityPassed(e.target.checked)} className="rounded text-emerald-600" />
+                  Repeatability Passed
+                </label>
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-[11px] text-amber-800">
-            <span className="font-semibold">Notice:</span> Submitting this determination
-            will advance the application status to <strong>{result}</strong> and complete
-            the inspection workflow.
+          {/* Section 3: Result & Seal */}
+          <div className="rounded-lg border border-slate-200 p-3 space-y-2.5 bg-slate-50/50">
+            <span className="font-bold text-slate-800 uppercase tracking-wider text-[10px] block">
+              3. Verification Determination & Seal
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <label className={`flex items-center p-2 rounded-lg border cursor-pointer ${result === "VERIFIED" ? "border-emerald-500 bg-emerald-50 text-emerald-900 font-semibold" : "border-slate-200 bg-white"}`}>
+                <input type="radio" name="result" value="VERIFIED" checked={result === "VERIFIED"} onChange={() => setResult("VERIFIED")} className="mr-1.5 text-emerald-600" />
+                VERIFIED (Pass)
+              </label>
+              <label className={`flex items-center p-2 rounded-lg border cursor-pointer ${result === "REJECTED" ? "border-rose-500 bg-rose-50 text-rose-900 font-semibold" : "border-slate-200 bg-white"}`}>
+                <input type="radio" name="result" value="REJECTED" checked={result === "REJECTED"} onChange={() => setResult("REJECTED")} className="mr-1.5 text-rose-600" />
+                REJECTED (Fail)
+              </label>
+            </div>
+
+            {result === "VERIFIED" && (
+              <div>
+                <label className="block font-medium text-slate-700 mb-0.5">Physical Seal Number Affixed *</label>
+                <input
+                  type="text"
+                  required
+                  value={sealNumber}
+                  onChange={(e) => setSealNumber(e.target.value)}
+                  placeholder="e.g. SL-DEL-2026-0042"
+                  className="w-full h-7 rounded border border-slate-300 px-2 font-mono text-xs bg-white"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="block font-medium text-slate-700 mb-0.5">Remarks / Standards Adherence</label>
+              <textarea
+                rows={2}
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="Observed tolerances comply with Legal Metrology Act Schedule VII..."
+                className="w-full rounded border border-slate-300 p-1.5 text-xs bg-white"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
-            >
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <button type="button" onClick={onClose} disabled={isLoading} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className={`px-4 py-1.5 rounded-lg font-semibold text-white transition disabled:opacity-50 ${
-                result === "VERIFIED"
-                  ? "bg-emerald-600 hover:bg-emerald-700"
-                  : "bg-rose-600 hover:bg-rose-700"
-              }`}
+              className={`px-4 py-1.5 rounded-lg font-semibold text-white transition disabled:opacity-50 ${result === "VERIFIED" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"}`}
             >
-              {isLoading ? "Submitting..." : `Confirm ${result}`}
+              {isLoading ? "Saving..." : "Submit Inspection Checklist"}
             </button>
           </div>
         </form>

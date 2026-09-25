@@ -13,6 +13,11 @@ class StakeholderProfileCreate(BaseModel):
     city: str = Field(..., min_length=2, max_length=100)
     state: str = Field(..., min_length=2, max_length=100)
     pincode: str = Field(..., min_length=4, max_length=10)
+    # KYC Fields
+    gstin: Optional[str] = Field(None, max_length=15)
+    pan: Optional[str] = Field(None, max_length=10)
+    business_type: Optional[str] = Field(None, max_length=32)
+    aadhaar_reference: Optional[str] = Field(None, max_length=32)
 
 
 class StakeholderProfileResponse(BaseModel):
@@ -28,6 +33,10 @@ class StakeholderProfileResponse(BaseModel):
     city: str
     state: str
     pincode: str
+    gstin: Optional[str] = None
+    pan: Optional[str] = None
+    business_type: Optional[str] = None
+    aadhaar_reference: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -79,6 +88,10 @@ class ProfileUpdate(BaseModel):
     city: Optional[str] = Field(None, min_length=2, max_length=100)
     state: Optional[str] = Field(None, min_length=2, max_length=100)
     pincode: Optional[str] = Field(None, min_length=4, max_length=10)
+    gstin: Optional[str] = Field(None, max_length=15)
+    pan: Optional[str] = Field(None, max_length=10)
+    business_type: Optional[str] = Field(None, max_length=32)
+    aadhaar_reference: Optional[str] = Field(None, max_length=32)
 
 
 class PasswordChangeRequest(BaseModel):

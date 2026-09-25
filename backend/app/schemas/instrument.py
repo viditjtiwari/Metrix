@@ -5,16 +5,35 @@ from app.models.enums import InstrumentType
 
 
 class InstrumentCreate(BaseModel):
-    """Schema for registering a new instrument."""
+    """Schema for registering a new instrument.
+
+    purchase_invoice_url is required — owners must upload the purchase
+    invoice when registering any instrument.
+    """
     instrument_type: InstrumentType
     manufacturer: str = Field(..., min_length=2, max_length=128)
     model_name: str = Field(..., min_length=1, max_length=128)
     serial_number: str = Field(..., min_length=1, max_length=128)
+    manufacturing_year: Optional[int] = None
     capacity: Optional[str] = Field(None, max_length=64)
     min_capacity: Optional[str] = Field(None, max_length=64)
     max_capacity: Optional[str] = Field(None, max_length=64)
     capacity_unit: Optional[str] = Field(None, max_length=16)
+    min_capacity_unit: Optional[str] = Field(None, max_length=16)
+    max_capacity_unit: Optional[str] = Field(None, max_length=16)
+    division: Optional[str] = Field(
+        None, max_length=32,
+        description="Smallest scale division (e.g. 10g, 0.01kg)"
+    )
     location: str = Field(..., min_length=3, max_length=255)
+    purchase_invoice_url: Optional[str] = Field(
+        None, description="URL of uploaded purchase invoice"
+    )
+    tac_certificate_url: Optional[str] = Field(
+        None,
+        description="Type Approval Certificate URL "
+                    "(required for initial verification)"
+    )
 
 
 class InstrumentUpdate(BaseModel):
@@ -24,7 +43,11 @@ class InstrumentUpdate(BaseModel):
     min_capacity: Optional[str] = Field(None, max_length=64)
     max_capacity: Optional[str] = Field(None, max_length=64)
     capacity_unit: Optional[str] = Field(None, max_length=16)
+    min_capacity_unit: Optional[str] = Field(None, max_length=16)
+    max_capacity_unit: Optional[str] = Field(None, max_length=16)
+    division: Optional[str] = Field(None, max_length=32)
     location: Optional[str] = Field(None, min_length=3, max_length=255)
+    tac_certificate_url: Optional[str] = None
 
 
 class InstrumentResponse(BaseModel):
@@ -38,13 +61,20 @@ class InstrumentResponse(BaseModel):
     manufacturer: str
     model_name: str
     serial_number: str
+    manufacturing_year: Optional[int] = None
     capacity: Optional[str] = None
     min_capacity: Optional[str] = None
     max_capacity: Optional[str] = None
     capacity_unit: Optional[str] = None
+    min_capacity_unit: Optional[str] = None
+    max_capacity_unit: Optional[str] = None
+    division: Optional[str] = None
     location: str
     image_urls: Optional[str] = None
+    purchase_invoice_url: Optional[str] = None
+    tac_certificate_url: Optional[str] = None
     is_active: bool
+    is_gatc_required: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -71,3 +101,4 @@ class BatchInstrumentUploadResponse(BaseModel):
     failed_count: int
     created_instruments: List[InstrumentResponse]
     errors: List[BatchUploadErrorItem]
+

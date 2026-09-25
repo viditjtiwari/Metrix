@@ -1,19 +1,24 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useGetCertificateQuery, useDownloadCertificateMutation } from "@/features/certificates/certificateApi";
+import { CreateApplicationModal } from "@/features/applications/CreateApplicationModal";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDate, formatDateTime, daysUntil } from "@/utils/formatters";
-import { Award, Download, ArrowLeft, ExternalLink, Shield } from "lucide-react";
+import { Award, Download, ArrowLeft, ExternalLink, Shield, RotateCw } from "lucide-react";
+import { useAppSelector } from "@/store/hooks";
 
 export default function CertificateDetailPage() {
+  const router = useRouter();
   const { id } = useParams<{ id: string }>();
+  const { user } = useAppSelector((state) => state.auth);
   const { data: cert, isLoading, isError } = useGetCertificateQuery(Number(id));
   const [downloadPdf, { isLoading: isDownloading }] = useDownloadCertificateMutation();
+  const [showReverifyModal, setShowReverifyModal] = useState(false);
 
   if (isLoading) return <LoadingSpinner text="Loading certificate..." />;
   if (isError || !cert) {
@@ -25,6 +30,7 @@ export default function CertificateDetailPage() {
   }
 
   const days = daysUntil(cert.valid_until);
+  const canApply = user?.role === "INSTRUMENT_OWNER" || user?.role === "ADMIN";
 
   const handleDownload = async () => {
     try {
@@ -48,22 +54,59 @@ export default function CertificateDetailPage() {
           title={cert.certificate_number}
           badge={<StatusBadge status={cert.status} size="md" />}
           actions={
-            <button
-              onClick={handleDownload}
-              disabled={isDownloading}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-50"
-            >
-              <Download size={16} /> {isDownloading ? "Downloading..." : "Download PDF"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {canApply && (
+                <button
+                  onClick={() => setShowReverifyModal(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-emerald-600/30 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-xs font-semibold transition"
+                >
+                  <RotateCw size={14} /> Re-verify
+                </button>
+              )}
+              <button
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition disabled:opacity-50"
+              >
+                <Download size={14} /> {isDownloading ? "Downloading..." : "Download PDF"}
+              </button>
+            </div>
           }
         />
       </div>
 
       {/* Expiry Warning */}
       {cert.status === "ACTIVE" && days <= 30 && days > 0 && (
-        <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-          <Award size={18} className="text-amber-600" />
-          This certificate expires in <strong>{days} days</strong>. Consider submitting a re-verification application.
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+          <div className="flex items-center gap-2.5">
+            <Award size={18} className="text-amber-600 shrink-0" />
+            <span>This certificate expires in <strong>{days} days</strong>. Statutory re-verification is required.</span>
+          </div>
+          {canApply && (
+            <button
+              onClick={() => setShowReverifyModal(true)}
+              className="shrink-0 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold transition"
+            >
+              Apply for Re-verification
+            </button>
+          )}
+        </div>
+      )}
+
+      {cert.status === "EXPIRED" && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
+          <div className="flex items-center gap-2.5">
+            <Award size={18} className="text-rose-600 shrink-0" />
+            <span>This certificate has <strong>expired</strong>. Instrument trade use requires statutory re-verification.</span>
+          </div>
+          {canApply && (
+            <button
+              onClick={() => setShowReverifyModal(true)}
+              className="shrink-0 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold transition"
+            >
+              Apply for Re-verification
+            </button>
+          )}
         </div>
       )}
 
@@ -132,6 +175,18 @@ export default function CertificateDetailPage() {
           )}
         </div>
       </div>
+
+      {showReverifyModal && (
+        <CreateApplicationModal
+          preselectedInstrumentId={cert.instrument_id}
+          initialApplicationType="RE_VERIFICATION"
+          onClose={() => setShowReverifyModal(false)}
+          onSuccess={(app) => {
+            setShowReverifyModal(false);
+            router.push(`/applications/${app.id}`);
+          }}
+        />
+      )}
     </div>
   );
 }

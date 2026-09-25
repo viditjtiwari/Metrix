@@ -11,6 +11,10 @@ from app.schemas.application import (
     ApplicationListResponse,
     ApplicationResponse,
     ApplicationStatusUpdate,
+    ClarificationRequestSubmit,
+    ClarificationResponseSubmit,
+    PaymentReceiptSubmit,
+    PaymentVerificationSubmit,
 )
 from app.schemas.certificate import (
     CertificateDetailResponse,
@@ -242,6 +246,94 @@ def get_application_certificate(
     return certificate_service.get_certificate_by_application(
         db, application_id=application_id, current_user=current_user
     )
+
+
+@router.post(
+    "/{application_id}/payment-receipt",
+    response_model=ApplicationDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Upload Challan Payment Receipt",
+)
+def upload_payment_receipt(
+    application_id: int,
+    receipt_data: PaymentReceiptSubmit,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ApplicationDetailResponse:
+    """Upload treasury / challan payment receipt for application fee verification."""
+    updated = application_service.upload_payment_receipt(
+        db,
+        application_id=application_id,
+        receipt_data=receipt_data,
+        current_user=current_user,
+    )
+    return application_service.enrich_application_detail(updated)
+
+
+@router.patch(
+    "/{application_id}/payment-verify",
+    response_model=ApplicationDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Verify or Reject Payment Challan",
+)
+def verify_payment(
+    application_id: int,
+    verification_data: PaymentVerificationSubmit,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.LMO, UserRole.ADMIN)),
+) -> ApplicationDetailResponse:
+    """Verify statutory fee payment challan (LMO/Admin) and advance to Under Review."""
+    updated = application_service.verify_payment(
+        db,
+        application_id=application_id,
+        verification_data=verification_data,
+        current_user=current_user,
+    )
+    return application_service.enrich_application_detail(updated)
+
+
+@router.patch(
+    "/{application_id}/clarification/request",
+    response_model=ApplicationDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Request Clarification from Applicant",
+)
+def request_clarification(
+    application_id: int,
+    clarification_data: ClarificationRequestSubmit,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.LMO, UserRole.ADMIN)),
+) -> ApplicationDetailResponse:
+    """Request documentation or data clarification from applicant during scrutiny."""
+    updated = application_service.request_clarification(
+        db,
+        application_id=application_id,
+        clarification_data=clarification_data,
+        current_user=current_user,
+    )
+    return application_service.enrich_application_detail(updated)
+
+
+@router.patch(
+    "/{application_id}/clarification/respond",
+    response_model=ApplicationDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Submit Clarification Response",
+)
+def respond_clarification(
+    application_id: int,
+    response_data: ClarificationResponseSubmit,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ApplicationDetailResponse:
+    """Applicant response to officer clarification request, resuming scrutiny."""
+    updated = application_service.respond_clarification(
+        db,
+        application_id=application_id,
+        response_data=response_data,
+        current_user=current_user,
+    )
+    return application_service.enrich_application_detail(updated)
 
 
 @router.delete(

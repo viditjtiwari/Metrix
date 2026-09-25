@@ -1,7 +1,10 @@
 export type ApplicationStatus =
   | "DRAFT"
   | "SUBMITTED"
+  | "PAYMENT_UPLOADED"
+  | "PAYMENT_VERIFIED"
   | "UNDER_REVIEW"
+  | "CLARIFICATION_ASKED"
   | "SCHEDULED"
   | "INSPECTION_IN_PROGRESS"
   | "INSPECTION_COMPLETED"
@@ -9,17 +12,14 @@ export type ApplicationStatus =
   | "CERTIFICATE_ISSUED"
   | "REJECTED";
 
+export type PaymentStatus = "PENDING" | "UPLOADED" | "VERIFIED" | "REJECTED";
+
 export type InspectionResult = "VERIFIED" | "REJECTED";
 
-export type InstrumentType =
-  | "WEIGHING_SCALE"
-  | "ELECTRONIC_BALANCE"
-  | "PETROL_DISPENSER"
-  | "FLOW_METER"
-  | "LENGTH_MEASURE"
-  | "OTHER";
+import { InstrumentType } from "./instruments";
+export * from "./instruments";
 
-export type CertificateStatus = "ACTIVE" | "EXPIRED";
+export type CertificateStatus = "ACTIVE" | "EXPIRED" | "SUPERSEDED" | "REVOKED";
 
 export type NotificationType =
   | "APPLICATION_SUBMITTED"
@@ -30,7 +30,10 @@ export type NotificationType =
   | "APPLICATION_REJECTED"
   | "CERTIFICATE_ISSUED"
   | "CERTIFICATE_EXPIRING"
-  | "CERTIFICATE_EXPIRED";
+  | "CERTIFICATE_EXPIRED"
+  | "PAYMENT_VERIFIED"
+  | "PAYMENT_REJECTED"
+  | "CLARIFICATION_ASKED";
 
 export interface StatusHistoryResponse {
   id: number;
@@ -51,6 +54,19 @@ export interface ApplicationResponse {
   status: ApplicationStatus;
   submitted_at?: string | null;
   remarks?: string | null;
+
+  // Statutory fee & payment tracking
+  payment_status?: PaymentStatus;
+  payment_receipt_url?: string | null;
+  challan_reference_number?: string | null;
+  challan_date?: string | null;
+  calculated_fee?: number;
+  late_fee?: number;
+  total_fee?: number;
+  payment_uploaded_at?: string | null;
+  payment_verified_at?: string | null;
+  payment_remarks?: string | null;
+
   created_at: string;
   updated_at: string;
 }
@@ -88,15 +104,31 @@ export interface InspectionResponse {
   result_remarks?: string | null;
   image_urls?: string | string[] | null;
   certificate_image_url?: string | null;
+  inspection_mode?: string | null;
+  seal_number?: string | null;
+  stamp_quarter?: string | null;
+  physical_inspection_data?: string | null;
+  metrological_test_data?: string | null;
+  gatc_test_report_url?: string | null;
+  gatc_recommendation?: string | null;
+  lmo_approval_status?: string | null;
+  lmo_approval_remarks?: string | null;
+  assigned_to_name?: string | null;
+  assigned_to_role?: string | null;
+  application_number?: string | null;
   created_at: string;
   updated_at: string;
 }
 
-
 export interface InspectionDetailResponse extends InspectionResponse {
   observations: ObservationResponse[];
-  assigned_to_name?: string | null;
-  assigned_to_role?: string | null;
+}
+
+export interface InspectionListResponse {
+  items: InspectionResponse[];
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 export interface ApplicationDetailResponse extends ApplicationResponse {
@@ -166,6 +198,7 @@ export interface CertificateDetailResponse extends CertificateResponse {
   serial_number?: string | null;
   capacity?: string | null;
   issued_by_name?: string | null;
+  inspecting_officer_name?: string | null;
   application_number?: string | null;
   verification_url?: string | null;
 }
@@ -231,6 +264,8 @@ export interface InstrumentResponse {
   capacity_unit?: string | null;
   location: string;
   image_urls?: string | string[] | null;
+  tac_certificate_url?: string | null;
+  purchase_invoice_url?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

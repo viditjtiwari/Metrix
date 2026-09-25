@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { PublicCertificateVerificationResponse } from "@/types";
 import { GlobalTopNav } from "@/components/layout/GlobalTopNav";
 import { GlobalFooter } from "@/components/layout/GlobalFooter";
+import { DiscrepancyReportModal } from "@/features/verify/DiscrepancyReportModal";
 
 export default function PublicVerifyPage() {
   const params = useParams();
@@ -14,6 +15,7 @@ export default function PublicVerifyPage() {
   const [cert, setCert] = useState<PublicCertificateVerificationResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -186,6 +188,17 @@ export default function PublicVerifyPage() {
                 {cert.integrity_hash}
               </p>
             </div>
+
+            {/* Whistleblower / Anti-Tamper Report Action */}
+            <div className="pt-2 text-center">
+              <button
+                type="button"
+                onClick={() => setShowReportModal(true)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline"
+              >
+                ⚠️ Report Suspicious or Tampered Certificate
+              </button>
+            </div>
           </div>
         ) : null}
 
@@ -196,6 +209,14 @@ export default function PublicVerifyPage() {
           </Link>
         </div>
       </div>
+
+      {showReportModal && cert && (
+        <DiscrepancyReportModal
+          token={token}
+          certificateNumber={cert.certificate_number}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
       </main>
       <GlobalFooter />
     </div>

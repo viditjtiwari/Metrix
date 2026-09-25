@@ -19,6 +19,10 @@ interface ApplicationActionBarProps {
   onOpenIssueCert: () => void;
   onSubmitDraft?: () => void;
   onDeleteDraft?: () => void;
+  onOpenUploadPayment?: () => void;
+  onOpenVerifyPayment?: () => void;
+  onOpenClarificationRequest?: () => void;
+  onOpenClarificationRespond?: () => void;
 }
 
 export const ApplicationActionBar: React.FC<ApplicationActionBarProps> = ({
@@ -37,9 +41,14 @@ export const ApplicationActionBar: React.FC<ApplicationActionBarProps> = ({
   onOpenIssueCert,
   onSubmitDraft,
   onDeleteDraft,
+  onOpenUploadPayment,
+  onOpenVerifyPayment,
+  onOpenClarificationRequest,
+  onOpenClarificationRespond,
 }) => {
   const isOfficerOrAdmin = user?.role === "LMO" || user?.role === "ADMIN";
   const isOwnerOrAdmin = user?.role === "INSTRUMENT_OWNER" || user?.role === "ADMIN" || user?.id === app.applicant_id;
+  const isApplicant = user?.id === app.applicant_id || user?.role === "INSTRUMENT_OWNER";
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -65,23 +74,53 @@ export const ApplicationActionBar: React.FC<ApplicationActionBarProps> = ({
         </>
       )}
 
-      {app.status === "SUBMITTED" && isOfficerOrAdmin && (
+      {app.status === "SUBMITTED" && (
         <>
-          <button
-            onClick={onReview}
-            disabled={updatingStatus}
-            className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
-          >
-            Accept for Review
-          </button>
-          <button
-            onClick={onRejectReview}
-            disabled={updatingStatus}
-            className="px-3.5 py-1.5 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50 text-xs font-medium transition"
-          >
-            Reject Application
-          </button>
+          {isApplicant && onOpenUploadPayment && (
+            <button
+              onClick={onOpenUploadPayment}
+              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition flex items-center gap-1"
+            >
+              💳 Upload Challan Receipt
+            </button>
+          )}
+          {isOfficerOrAdmin && (
+            <>
+              <button
+                onClick={onReview}
+                disabled={updatingStatus}
+                className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
+              >
+                Accept for Review
+              </button>
+              <button
+                onClick={onRejectReview}
+                disabled={updatingStatus}
+                className="px-3.5 py-1.5 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50 text-xs font-medium transition"
+              >
+                Reject Application
+              </button>
+            </>
+          )}
         </>
+      )}
+
+      {app.status === "PAYMENT_UPLOADED" && isOfficerOrAdmin && onOpenVerifyPayment && (
+        <button
+          onClick={onOpenVerifyPayment}
+          className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition flex items-center gap-1 shadow-xs"
+        >
+          🔍 Verify Payment Challan
+        </button>
+      )}
+
+      {app.status === "CLARIFICATION_ASKED" && isApplicant && onOpenClarificationRespond && (
+        <button
+          onClick={onOpenClarificationRespond}
+          className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition flex items-center gap-1 shadow-xs"
+        >
+          💬 Respond to Clarification
+        </button>
       )}
 
       {app.status === "UNDER_REVIEW" && isOfficerOrAdmin && (
@@ -98,6 +137,14 @@ export const ApplicationActionBar: React.FC<ApplicationActionBarProps> = ({
           >
             Assign Verifier
           </button>
+          {onOpenClarificationRequest && (
+            <button
+              onClick={onOpenClarificationRequest}
+              className="px-3.5 py-1.5 rounded-lg border border-amber-300 text-amber-800 bg-amber-50 hover:bg-amber-100 text-xs font-medium transition"
+            >
+              ❓ Request Clarification
+            </button>
+          )}
           <button
             onClick={onRejectReview}
             className="px-3.5 py-1.5 rounded-lg border border-rose-300 text-rose-700 hover:bg-rose-50 text-xs font-medium transition"

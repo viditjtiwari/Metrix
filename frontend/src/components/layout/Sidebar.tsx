@@ -8,13 +8,14 @@ import { getMenuGroups, GROUP_LABELS, ROLE_PORTAL } from "@/utils/roleConfig";
 import { UserRole } from "@/types";
 import {
   LayoutDashboard, Scale, FileText, ClipboardCheck, Award,
-  Search, Download, Bell, Users, Server, Megaphone,
-  ChevronLeft, ChevronRight, LucideIcon,
+  Search, Download, Bell, Users, Server, Megaphone, BarChart3,
+  Calculator, ChevronLeft, ChevronRight, LucideIcon,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   LayoutDashboard, Scale, FileText, ClipboardCheck, Award,
-  Search, Download, Bell, Users, Server, Megaphone,
+  Search, Download, Bell, Users, Server, Megaphone, BarChart3,
+  Calculator,
 };
 
 /** Accent classes per role for the active link highlight */

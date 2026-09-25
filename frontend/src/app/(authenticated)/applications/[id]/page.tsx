@@ -13,15 +13,12 @@ import {
 import { useGetApplicationCertificateQuery } from "@/features/certificates/certificateApi";
 import { ApplicationStatusBadge } from "@/features/applications/ApplicationStatusBadge";
 import { ApplicationActionBar } from "@/features/applications/ApplicationActionBar";
-import { AssignModal } from "@/features/applications/AssignModal";
-import { AddObservationModal } from "@/features/applications/AddObservationModal";
+import { ApplicationModals } from "@/features/applications/ApplicationModals";
+import { PaymentDetailsCard } from "@/features/applications/PaymentDetailsCard";
 import { InspectionCard } from "@/features/applications/InspectionCard";
-import { InspectionResultModal } from "@/features/applications/InspectionResultModal";
 import { ObservationsList } from "@/features/applications/ObservationsList";
-import { ScheduleModal } from "@/features/applications/ScheduleModal";
 import { StatusTimeline } from "@/features/applications/StatusTimeline";
 import { CertificateCard } from "@/features/certificates/CertificateCard";
-import { IssueCertificateModal } from "@/features/certificates/IssueCertificateModal";
 import { ApplicationInfoCards } from "@/features/applications/ApplicationInfoCards";
 import { InspectionImageUpload } from "@/features/applications/InspectionImageUpload";
 import { parseImageUrls } from "@/utils/formatters";
@@ -38,6 +35,10 @@ export default function ApplicationDetailPage() {
   const [showAddObs, setShowAddObs] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [showIssueCert, setShowIssueCert] = useState(false);
+  const [showUploadPayment, setShowUploadPayment] = useState(false);
+  const [showVerifyPayment, setShowVerifyPayment] = useState(false);
+  const [showClarificationRequest, setShowClarificationRequest] = useState(false);
+  const [showClarificationRespond, setShowClarificationRespond] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const { data: app, isLoading, isError, refetch } = useGetApplicationQuery(applicationId, {
@@ -134,7 +135,6 @@ export default function ApplicationDetailPage() {
   }
 
   const isAssignedVerifier = inspection?.assigned_to_id === user?.id || user?.role === "ADMIN" || user?.role === "LMO";
-
   const inspectionImageUrls = parseImageUrls(inspection?.image_urls);
 
   return (
@@ -167,6 +167,10 @@ export default function ApplicationDetailPage() {
           onOpenIssueCert={() => setShowIssueCert(true)}
           onSubmitDraft={handleSubmitDraft}
           onDeleteDraft={handleDeleteDraft}
+          onOpenUploadPayment={() => setShowUploadPayment(true)}
+          onOpenVerifyPayment={() => setShowVerifyPayment(true)}
+          onOpenClarificationRequest={() => setShowClarificationRequest(true)}
+          onOpenClarificationRespond={() => setShowClarificationRespond(true)}
         />
       </div>
 
@@ -177,18 +181,16 @@ export default function ApplicationDetailPage() {
       {/* Main Grid: Details + Timeline */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          {/* Certificate Card when CERTIFICATE_ISSUED */}
           {app.status === "CERTIFICATE_ISSUED" && certificate && (
             <CertificateCard certificate={certificate} />
           )}
 
-          {/* Applicant & Instrument Specification Cards */}
           <ApplicationInfoCards app={app} />
 
-          {/* Inspection Info Card */}
+          <PaymentDetailsCard app={app} />
+
           {inspection && <InspectionCard inspection={inspection} />}
 
-          {/* Observations */}
           {inspection && (
             <ObservationsList
               observations={inspection.observations || []}
@@ -197,7 +199,6 @@ export default function ApplicationDetailPage() {
             />
           )}
 
-          {/* Proof Photos & Certificate Stamping Photo Selection */}
           {inspection && (
             <InspectionImageUpload
               inspectionId={inspection.id}
@@ -216,62 +217,35 @@ export default function ApplicationDetailPage() {
           )}
         </div>
 
-        {/* Audit Status History Timeline */}
         <StatusTimeline history={app.status_history} />
       </div>
 
-      {/* Modals */}
-      {showSchedule && (
-        <ScheduleModal
-          applicationId={applicationId}
-          initialDate={inspection?.scheduled_date}
-          initialTime={inspection?.scheduled_time}
-          initialLocation={inspection?.inspection_location}
-          initialRemarks={inspection?.scheduling_remarks}
-          initialVerifierId={inspection?.assigned_to_id}
-          onClose={() => setShowSchedule(false)}
-          onSuccess={() => { refetch(); safeRefetch(refetchInspection); }}
-        />
-      )}
-
-      {showAssign && (
-        <AssignModal
-          applicationId={applicationId}
-          currentVerifierId={inspection?.assigned_to_id}
-          onClose={() => setShowAssign(false)}
-          onSuccess={() => { refetch(); safeRefetch(refetchInspection); }}
-        />
-      )}
-
-      {showAddObs && inspection && (
-        <AddObservationModal
-          inspectionId={inspection.id}
-          applicationId={applicationId}
-          onClose={() => setShowAddObs(false)}
-          onSuccess={() => safeRefetch(refetchInspection)}
-        />
-      )}
-
-      {showResult && inspection && (
-        <InspectionResultModal
-          inspectionId={inspection.id}
-          applicationId={applicationId}
-          onClose={() => setShowResult(false)}
-          onSuccess={() => { refetch(); safeRefetch(refetchInspection); }}
-        />
-      )}
-
-      {showIssueCert && app.status !== "CERTIFICATE_ISSUED" && (
-        <IssueCertificateModal
-          applicationId={applicationId}
-          applicationNumber={app.application_number}
-          onClose={() => setShowIssueCert(false)}
-          onSuccess={() => {
-            refetch();
-            safeRefetch(refetchCert);
-          }}
-        />
-      )}
+      <ApplicationModals
+        applicationId={applicationId}
+        app={app}
+        inspection={inspection}
+        showSchedule={showSchedule}
+        setShowSchedule={setShowSchedule}
+        showAssign={showAssign}
+        setShowAssign={setShowAssign}
+        showAddObs={showAddObs}
+        setShowAddObs={setShowAddObs}
+        showResult={showResult}
+        setShowResult={setShowResult}
+        showIssueCert={showIssueCert}
+        setShowIssueCert={setShowIssueCert}
+        showUploadPayment={showUploadPayment}
+        setShowUploadPayment={setShowUploadPayment}
+        showVerifyPayment={showVerifyPayment}
+        setShowVerifyPayment={setShowVerifyPayment}
+        showClarificationRequest={showClarificationRequest}
+        setShowClarificationRequest={setShowClarificationRequest}
+        showClarificationRespond={showClarificationRespond}
+        setShowClarificationRespond={setShowClarificationRespond}
+        onRefreshAll={refetch}
+        onRefreshInspection={() => safeRefetch(refetchInspection)}
+        onRefreshCert={() => safeRefetch(refetchCert)}
+      />
     </div>
   );
 }

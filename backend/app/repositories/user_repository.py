@@ -163,6 +163,10 @@ class UserRepository:
                 city=profile_dict.get("city", "").strip(),
                 state=profile_dict.get("state", "").strip(),
                 pincode=profile_dict.get("pincode", "").strip(),
+                gstin=profile_dict.get("gstin"),
+                pan=profile_dict.get("pan"),
+                business_type=profile_dict.get("business_type"),
+                aadhaar_reference=profile_dict.get("aadhaar_reference"),
             )
             db.add(profile)
         else:

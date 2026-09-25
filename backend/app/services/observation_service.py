@@ -39,6 +39,18 @@ def to_detail_response(inspection: Inspection) -> InspectionDetailResponse:
         observations=observations_data,
         assigned_to_name=assigned_to_name,
         assigned_to_role=assigned_to_role,
+        inspection_mode=(
+            inspection.inspection_mode.value
+            if inspection.inspection_mode else None
+        ),
+        seal_number=inspection.seal_number,
+        stamp_quarter=inspection.stamp_quarter,
+        physical_inspection_data=inspection.physical_inspection_data,
+        metrological_test_data=inspection.metrological_test_data,
+        gatc_test_report_url=inspection.gatc_test_report_url,
+        gatc_recommendation=inspection.gatc_recommendation,
+        lmo_approval_status=inspection.lmo_approval_status,
+        lmo_approval_remarks=inspection.lmo_approval_remarks,
     )
 
 

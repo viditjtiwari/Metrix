@@ -127,6 +127,46 @@ export default function InstrumentDetailPage() {
         </div>
       </div>
 
+      {/* Statutory Dossier Card */}
+      {(instrument.tac_certificate_url || instrument.purchase_invoice_url) && (
+        <div className="bg-white rounded-xl border border-slate-200 p-5 text-xs">
+          <div className="flex items-center gap-2 mb-3">
+            <FileText size={16} className="text-blue-600" />
+            <h2 className="text-sm font-bold text-slate-900">Statutory Compliance Dossier (LM Rules)</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-3 rounded-lg border border-slate-100 bg-slate-50/70">
+              <span className="text-[11px] font-medium text-slate-400 block uppercase">Type Approval Certificate (TAC)</span>
+              {instrument.tac_certificate_url ? (
+                instrument.tac_certificate_url.startsWith("http") ? (
+                  <a href={instrument.tac_certificate_url} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline font-medium mt-1 inline-flex items-center gap-1">
+                    View TAC Certificate ↗
+                  </a>
+                ) : (
+                  <span className="font-mono text-slate-800 font-semibold mt-1 block">{instrument.tac_certificate_url}</span>
+                )
+              ) : (
+                <span className="text-slate-400 italic mt-1 block">Not provided</span>
+              )}
+            </div>
+            <div className="p-3 rounded-lg border border-slate-100 bg-slate-50/70">
+              <span className="text-[11px] font-medium text-slate-400 block uppercase">Purchase Invoice / Bill of Sale</span>
+              {instrument.purchase_invoice_url ? (
+                instrument.purchase_invoice_url.startsWith("http") ? (
+                  <a href={instrument.purchase_invoice_url} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline font-medium mt-1 inline-flex items-center gap-1">
+                    View Purchase Invoice ↗
+                  </a>
+                ) : (
+                  <span className="font-mono text-slate-800 font-semibold mt-1 block">{instrument.purchase_invoice_url}</span>
+                )
+              ) : (
+                <span className="text-slate-400 italic mt-1 block">Not provided</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Instrument Photos Component */}
       <InstrumentImageUpload
         instrumentId={instrument.id}

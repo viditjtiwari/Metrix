@@ -14,10 +14,10 @@ interface TopBarProps {
 
 export function TopBar({ onMenuToggle }: TopBarProps) {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const { data: notifData } = useGetNotificationsQuery(
     { page: 1, page_size: 5 },
-    { pollingInterval: 30000 }
+    { skip: !isAuthenticated || !user, pollingInterval: 30000 }
   );
 
   const unreadCount = notifData?.unread_count ?? 0;

@@ -40,15 +40,26 @@ export function formatStatusLabel(status: string): string {
 }
 
 export function formatInstrumentType(type: InstrumentType): string {
-  const labels: Record<InstrumentType, string> = {
+  const labels: Partial<Record<InstrumentType, string>> = {
     WEIGHING_SCALE: "Weighing Scale",
     ELECTRONIC_BALANCE: "Electronic Balance",
+    PLATFORM_SCALE: "Platform Scale",
+    WEIGHBRIDGE: "Weighbridge",
+    COUNTER_MACHINE: "Counter Machine",
+    PRECISION_BALANCE: "Precision Balance",
     PETROL_DISPENSER: "Petrol Dispenser",
     FLOW_METER: "Flow Meter",
+    TANK_LORRY: "Tank Lorry",
+    STORAGE_TANK: "Storage Tank",
+    WATER_METER: "Water Meter",
+    GAS_METER: "Gas Meter",
+    FARE_METER: "Fare Meter",
+    ENERGY_METER: "Energy Meter",
     LENGTH_MEASURE: "Length Measure",
+    CLINICAL_THERMOMETER: "Clinical Thermometer",
     OTHER: "Other",
   };
-  return labels[type] || type;
+  return labels[type] || formatStatusLabel(type);
 }
 
 export function getStatusColor(status: ApplicationStatus | CertificateStatus | string): string {

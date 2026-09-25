@@ -18,16 +18,26 @@ export default function CertificatesPage() {
   const [page, setPage] = useState(1);
   const [searchText, setSearchText] = useState("");
 
+  const isExpiringTab = tab === "expiring";
   const statusFilter = tab === "active" ? "ACTIVE" : tab === "expired" ? "EXPIRED" : undefined;
 
-  const { data, isLoading } = useSearchCertificatesQuery({
+  const { data: searchData, isLoading: searchLoading } = useSearchCertificatesQuery(
+    {
+      page,
+      page_size: 20,
+      status: statusFilter,
+      certificate_number: searchText || undefined,
+    },
+    { skip: isExpiringTab }
+  );
+
+  const { data: expiringData, isLoading: expiringLoading } = useListExpiringCertificatesQuery({
     page,
     page_size: 20,
-    status: statusFilter,
-    certificate_number: searchText || undefined,
   });
 
-  const { data: expiringData } = useListExpiringCertificatesQuery({ page: 1, page_size: 5 });
+  const data = isExpiringTab ? expiringData : searchData;
+  const isLoading = isExpiringTab ? expiringLoading : searchLoading;
   const expiringCount = expiringData?.total ?? 0;
 
   const columns = [

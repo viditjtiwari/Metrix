@@ -1,4 +1,5 @@
 from typing import Generator
+from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import settings
@@ -28,6 +29,11 @@ def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
         yield db
+    except HTTPException:
+        # Client HTTP exception (e.g., 401 Unauthorized, 404 Not Found);
+        # roll back the transaction cleanly without spamming database error logs.
+        db.rollback()
+        raise
     except Exception as exc:
         logger.error(f"Database session rolled back due to error: {exc}")
         db.rollback()

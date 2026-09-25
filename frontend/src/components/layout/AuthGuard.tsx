@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAppSelector } from "@/store/hooks";
 
@@ -13,14 +13,21 @@ export function AuthGuard({ children, requiredRoles }: AuthGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    setHasMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (hasMounted && !isAuthenticated) {
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
     }
-  }, [isAuthenticated, router, pathname]);
+  }, [hasMounted, isAuthenticated, router, pathname]);
 
-  if (!isAuthenticated || !user) {
+  // Always render the same loading spinner on server and first client render
+  // to avoid hydration mismatch from localStorage-derived auth state
+  if (!hasMounted || !isAuthenticated || !user) {
     return (
       <div className="flex items-center justify-center h-screen bg-slate-50">
         <div className="h-6 w-6 rounded-full border-2 border-slate-300 border-t-emerald-600 animate-spin" />

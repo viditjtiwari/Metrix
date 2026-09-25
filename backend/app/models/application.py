@@ -1,10 +1,10 @@
 from __future__ import annotations
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import TYPE_CHECKING, List, Optional
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base, TimestampMixin
-from app.models.enums import ApplicationStatus
+from app.models.enums import ApplicationStatus, PaymentStatus
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -47,11 +47,34 @@ class VerificationApplication(Base, TimestampMixin):
     )
     remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+    # --- Payment / Fee Tracking (Rule 14) ---
+    payment_status: Mapped[PaymentStatus] = mapped_column(
+        Enum(PaymentStatus, name="payment_status"),
+        default=PaymentStatus.PENDING,
+        index=True,
+        nullable=False,
+    )
+    payment_receipt_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    challan_reference_number: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    challan_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    calculated_fee: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    late_fee: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_fee: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    payment_uploaded_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    payment_verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    payment_verified_by_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    payment_remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
     instrument: Mapped[Instrument] = relationship(
         "Instrument", back_populates="applications"
     )
     applicant: Mapped[User] = relationship(
-        "User", back_populates="applications"
+        "User", back_populates="applications", foreign_keys=[applicant_id]
+    )
+    payment_verified_by: Mapped[Optional[User]] = relationship(
+        "User", foreign_keys=[payment_verified_by_id]
     )
     status_history: Mapped[List[ApplicationStatusHistory]] = relationship(
         "ApplicationStatusHistory",

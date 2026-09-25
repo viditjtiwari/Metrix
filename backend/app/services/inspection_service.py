@@ -2,32 +2,27 @@ from datetime import date, datetime, timezone
 from typing import List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from app.models.enums import ApplicationStatus, InspectionResult, NotificationType, UserRole
-from app.models.inspection import Inspection, InspectionObservation
+from app.models.enums import (
+    ApplicationStatus, InspectionResult, NotificationType, UserRole,
+)
+from app.models.inspection import Inspection
 from app.models.user import User
 from app.repositories.application_repository import application_repository
 from app.repositories.inspection_repository import inspection_repository
 from app.repositories.user_repository import user_repository
+from app.services.inspection_checklist_service import handle_submit_checklist
 from app.services.notification_service import notification_service
 from app.services.observation_service import observation_service, to_detail_response
 from app.schemas.inspection import (
-    AssignmentRequest,
-    InspectionDetailResponse,
-    InspectionListItem,
-    InspectionListResponse,
-    InspectionResponse,
-    InspectionResultUpdate,
-    ObservationCreate,
-    ObservationResponse,
+    AssignmentRequest, InspectionChecklistSubmit, InspectionDetailResponse,
+    InspectionListItem, InspectionListResponse, InspectionResponse,
+    InspectionResultUpdate, ObservationCreate, ObservationResponse,
     ScheduleRequest,
 )
 
 
 class InspectionService:
-    """Service orchestrating scheduling, verifier assignment, inspection execution,
-
-    parameter observations, and verification outcomes for applications.
-    """
+    """Service orchestrating scheduling, verification, observations, and outcomes."""
 
     def _to_detail_response(self, inspection: Inspection) -> InspectionDetailResponse:
         return to_detail_response(inspection)
@@ -59,8 +54,18 @@ class InspectionService:
                 detail=f"Cannot schedule an application in '{application.status.value}' status. Must be UNDER_REVIEW.",
             )
 
+        from app.models.enums import InspectionMode, is_gatc_instrument
+        is_gatc = bool(
+            application.instrument
+            and is_gatc_instrument(application.instrument.instrument_type)
+        )
         assigned_to_id = schedule_data.assigned_to_id
-        if assigned_to_id is not None:
+        if assigned_to_id is None:
+            pref_role = UserRole.GATC if is_gatc else UserRole.LMO
+            verifiers = user_repository.list_by_roles(db, [pref_role])
+            if verifiers:
+                assigned_to_id = verifiers[0].id
+        else:
             target_user = user_repository.get_by_id(db, assigned_to_id)
             if not target_user:
                 raise HTTPException(
@@ -70,7 +75,7 @@ class InspectionService:
             if target_user.role not in [UserRole.LMO, UserRole.GATC]:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Assigned verifier must be a Legal Metrology Officer (LMO) or Government Approved Test Centre (GATC).",
+                    detail="Assigned verifier must be an LMO or GATC.",
                 )
 
         inspection = inspection_repository.create_or_update_scheduling(
@@ -81,6 +86,10 @@ class InspectionService:
             inspection_location=schedule_data.inspection_location,
             scheduling_remarks=schedule_data.scheduling_remarks,
             assigned_to_id=assigned_to_id,
+        )
+        inspection.inspection_mode = (
+            schedule_data.inspection_mode
+            or (InspectionMode.GATC_LAB if is_gatc else InspectionMode.LMO_FIELD)
         )
 
         # Transition application status if currently UNDER_REVIEW
@@ -289,31 +298,19 @@ class InspectionService:
         return self._to_detail_response(inspection)
 
     def add_observation(
-        self,
-        db: Session,
-        *,
-        inspection_id: int,
-        observation_in: ObservationCreate,
-        current_user: User,
+        self, db: Session, *, inspection_id: int,
+        observation_in: ObservationCreate, current_user: User,
     ) -> ObservationResponse:
         return observation_service.add_observation(
-            db,
-            inspection_id=inspection_id,
-            observation_in=observation_in,
-            current_user=current_user,
+            db, inspection_id=inspection_id,
+            observation_in=observation_in, current_user=current_user,
         )
 
     def list_observations(
-        self,
-        db: Session,
-        *,
-        inspection_id: int,
-        current_user: User,
+        self, db: Session, *, inspection_id: int, current_user: User,
     ) -> List[ObservationResponse]:
         return observation_service.list_observations(
-            db,
-            inspection_id=inspection_id,
-            current_user=current_user,
+            db, inspection_id=inspection_id, current_user=current_user,
         )
 
     def list_inspections(
@@ -476,6 +473,23 @@ class InspectionService:
         db.commit()
         refreshed = inspection_repository.get_by_id(db, inspection.id)
         return self._to_detail_response(refreshed)
+
+
+    def submit_checklist(
+        self,
+        db: Session,
+        *,
+        inspection_id: int,
+        checklist: InspectionChecklistSubmit,
+        current_user: User,
+    ) -> InspectionDetailResponse:
+        """Submit the full structured inspection checklist in one shot."""
+        return handle_submit_checklist(
+            db,
+            inspection_id=inspection_id,
+            checklist=checklist,
+            current_user=current_user,
+        )
 
 
 inspection_service = InspectionService()

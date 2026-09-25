@@ -5,23 +5,46 @@ from typing import Dict, List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.application import VerificationApplication
-from app.models.enums import ApplicationStatus, NotificationType, UserRole
+from app.models.enums import ApplicationStatus, NotificationType, PaymentStatus, UserRole
 from app.models.user import User
 from app.repositories.application_repository import application_repository
 from app.repositories.instrument_repository import instrument_repository
+from app.repositories.user_repository import user_repository
 from app.schemas.application import (
     ApplicationCreate,
     ApplicationDetailResponse,
     ApplicationListResponse,
     ApplicationResponse,
+    ClarificationRequestSubmit,
+    ClarificationResponseSubmit,
+    PaymentReceiptSubmit,
+    PaymentVerificationSubmit,
 )
 from app.services.notification_service import notification_service
+from app.services.application_payment_service import application_payment_service
 
 ALLOWED_TRANSITIONS: Dict[ApplicationStatus, List[ApplicationStatus]] = {
     ApplicationStatus.DRAFT: [ApplicationStatus.SUBMITTED],
-    ApplicationStatus.SUBMITTED: [ApplicationStatus.UNDER_REVIEW],
+    ApplicationStatus.SUBMITTED: [
+        ApplicationStatus.PAYMENT_UPLOADED,
+        ApplicationStatus.UNDER_REVIEW,
+        ApplicationStatus.REJECTED,
+    ],
+    ApplicationStatus.PAYMENT_UPLOADED: [
+        ApplicationStatus.PAYMENT_VERIFIED,
+        ApplicationStatus.SUBMITTED,
+        ApplicationStatus.REJECTED,
+    ],
+    ApplicationStatus.PAYMENT_VERIFIED: [
+        ApplicationStatus.UNDER_REVIEW,
+    ],
     ApplicationStatus.UNDER_REVIEW: [
         ApplicationStatus.SCHEDULED,
+        ApplicationStatus.CLARIFICATION_ASKED,
+        ApplicationStatus.REJECTED,
+    ],
+    ApplicationStatus.CLARIFICATION_ASKED: [
+        ApplicationStatus.UNDER_REVIEW,
         ApplicationStatus.REJECTED,
     ],
     ApplicationStatus.SCHEDULED: [ApplicationStatus.INSPECTION_IN_PROGRESS],
@@ -287,6 +310,66 @@ class ApplicationService:
         success = application_repository.delete(db, application_id)
         db.commit()
         return success
+
+    def upload_payment_receipt(
+        self,
+        db: Session,
+        *,
+        application_id: int,
+        receipt_data: PaymentReceiptSubmit,
+        current_user: User,
+    ) -> VerificationApplication:
+        return application_payment_service.upload_payment_receipt(
+            db,
+            application_id=application_id,
+            receipt_data=receipt_data,
+            current_user=current_user,
+        )
+
+    def verify_payment(
+        self,
+        db: Session,
+        *,
+        application_id: int,
+        verification_data: PaymentVerificationSubmit,
+        current_user: User,
+    ) -> VerificationApplication:
+        return application_payment_service.verify_payment(
+            db,
+            application_id=application_id,
+            verification_data=verification_data,
+            current_user=current_user,
+        )
+
+    def request_clarification(
+        self,
+        db: Session,
+        *,
+        application_id: int,
+        clarification_data: ClarificationRequestSubmit,
+        current_user: User,
+    ) -> VerificationApplication:
+        return application_payment_service.request_clarification(
+            db,
+            application_id=application_id,
+            clarification_data=clarification_data,
+            current_user=current_user,
+        )
+
+    def respond_clarification(
+        self,
+        db: Session,
+        *,
+        application_id: int,
+        response_data: ClarificationResponseSubmit,
+        current_user: User,
+    ) -> VerificationApplication:
+        return application_payment_service.respond_clarification(
+            db,
+            application_id=application_id,
+            response_data=response_data,
+            current_user=current_user,
+        )
 
 
 application_service = ApplicationService()

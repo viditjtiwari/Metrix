@@ -11,7 +11,8 @@ import { DataTable } from "@/components/ui/DataTable";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDate, formatInstrumentType } from "@/utils/formatters";
 import { InstrumentResponse, InstrumentType } from "@/types";
-import { Plus, Scale, Upload } from "lucide-react";
+import { INSTRUMENT_TYPES } from "@/features/instruments/instrumentTypes";
+import { Plus, Scale, Upload, Download } from "lucide-react";
 
 export default function InstrumentsPage() {
   const router = useRouter();
@@ -86,6 +87,14 @@ export default function InstrumentsPage() {
         actions={
           canRegister ? (
             <div className="flex items-center gap-2">
+              <a
+                href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/instruments/csv-template`}
+                download="metrix_instruments_template.csv"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm font-medium transition shadow-2xs"
+                title="Download CSV Batch Template"
+              >
+                <Download size={15} /> Template
+              </a>
               <button
                 onClick={() => setShowBatchModal(true)}
                 className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-emerald-600/30 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-sm font-medium transition"
@@ -94,7 +103,7 @@ export default function InstrumentsPage() {
               </button>
               <button
                 onClick={() => setShowRegister(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition shadow-xs"
               >
                 <Plus size={16} /> Register Instrument
               </button>
@@ -117,13 +126,12 @@ export default function InstrumentsPage() {
           onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
           className="px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
         >
-          <option value="">All Types</option>
-          <option value="WEIGHING_SCALE">Weighing Scale</option>
-          <option value="ELECTRONIC_BALANCE">Electronic Balance</option>
-          <option value="PETROL_DISPENSER">Petrol Dispenser</option>
-          <option value="FLOW_METER">Flow Meter</option>
-          <option value="LENGTH_MEASURE">Length Measure</option>
-          <option value="OTHER">Other</option>
+          <option value="">All Instrument Types</option>
+          {INSTRUMENT_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
+            </option>
+          ))}
         </select>
       </div>
 

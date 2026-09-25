@@ -62,13 +62,17 @@ export default function ProfilePage() {
       {user.profile && (
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <h3 className="text-base font-bold text-slate-900 mb-4">
-            {user.role === "INSTRUMENT_OWNER" || user.role === "GATC" ? "Business Details" : "Contact & Office Details"}
+            {user.role === "INSTRUMENT_OWNER" || user.role === "GATC" ? "Business & KYC Details" : "Contact & Office Details"}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {(user.role === "INSTRUMENT_OWNER" || user.role === "GATC") && (
               <>
                 <InfoRow icon={<Building2 size={16} />} label="Business Name" value={user.profile.business_name} />
+                <InfoRow icon={<Shield size={16} />} label="Business Type" value={user.profile.business_type?.replace(/_/g, " ") || "Commercial User"} />
+                <InfoRow icon={<Shield size={16} />} label="GSTIN" value={user.profile.gstin || "—"} />
+                <InfoRow icon={<Shield size={16} />} label="PAN" value={user.profile.pan || "—"} />
                 <InfoRow icon={<Shield size={16} />} label="Trade License" value={user.profile.trade_license_number || "—"} />
+                <InfoRow icon={<Shield size={16} />} label="Aadhaar Reference" value={user.profile.aadhaar_reference || "—"} />
               </>
             )}
             <InfoRow icon={<Phone size={16} />} label="Contact Phone" value={user.profile.contact_phone} />

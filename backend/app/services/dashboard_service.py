@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.enums import UserRole
 from app.models.user import User
+from app.repositories.analytics_repository import analytics_repository
 from app.repositories.dashboard_repository import dashboard_repository
 from app.schemas.dashboard import (
     AdminDashboardMetrics,
@@ -46,7 +47,7 @@ class DashboardService:
         return DashboardSummaryResponse(role=role, metrics=metrics)
 
     def get_chart_data(self, db: Session, *, current_user: User) -> Dict[str, Any]:
-        return dashboard_repository.get_chart_data(db, current_user=current_user)
+        return analytics_repository.get_chart_data(db, current_user=current_user)
 
 
 dashboard_service = DashboardService()

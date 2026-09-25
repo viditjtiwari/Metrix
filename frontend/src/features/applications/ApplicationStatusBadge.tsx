@@ -24,6 +24,24 @@ const statusConfig: Record<
     text: "text-blue-700",
     dot: "bg-blue-500",
   },
+  PAYMENT_UPLOADED: {
+    label: "Challan Uploaded",
+    bg: "bg-indigo-50",
+    text: "text-indigo-700",
+    dot: "bg-indigo-500",
+  },
+  PAYMENT_VERIFIED: {
+    label: "Payment Verified",
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    dot: "bg-emerald-500",
+  },
+  CLARIFICATION_ASKED: {
+    label: "Clarification Needed",
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    dot: "bg-amber-500",
+  },
   UNDER_REVIEW: {
     label: "Under Review",
     bg: "bg-amber-50",

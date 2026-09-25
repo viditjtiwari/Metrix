@@ -78,12 +78,24 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["AdminUsers" as any],
     }),
+
+    getSystemHealth: builder.query<SystemHealthResponse, void>({
+      query: () => "/health",
+    }),
   }),
 });
+
+export interface SystemHealthResponse {
+  status: string;
+  database: string;
+  version: string;
+  environment: string;
+}
 
 export const {
   useListUsersQuery,
   useGetUserQuery,
   useUpdateUserStatusMutation,
   useCreateOfficialUserMutation,
+  useGetSystemHealthQuery,
 } = adminApi;
