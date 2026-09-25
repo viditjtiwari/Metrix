@@ -7,9 +7,14 @@
 
 ## 1. System Overview
 
-**METRIX** is an enterprise-grade Legal Metrology automation platform designed to digitize the statutory lifecycle for commercial weighing and measuring instruments. It provides complete digital governance: equipment owners register instruments and submit verification requests; Legal Metrology Officers (LMOs) and Government Approved Test Centres (GATCs) schedule, inspect, record physical observations, and upload inspection proof; and the platform issues tamper-evident, bilingual digital certificates embedded with high-correction QR codes and SHA-256 cryptographic digests.
+**METRIX** is an enterprise-grade Legal Metrology automation platform designed to digitize the statutory lifecycle for commercial weighing and measuring instruments in accordance with the Legal Metrology Act, 2009 and the Legal Metrology (General) Rules, 2011.
 
-Consumers, enforcement officials, and businesses can verify certificate authenticity in real-time via the public verification portal using live webcam/mobile QR scanning or certificate number lookup.
+The platform provides end-to-end digital governance across all statutory actors:
+- **Instrument Owners / Traders**: Register instruments with TAC certificates & invoices, compute statutory fees, submit verification/re-verification applications, and upload payment receipts.
+- **Legal Metrology Officers (LMOs)**: Conduct field verifications, perform category-specific checklists, log physical observations, endorse GATC laboratory dossiers, verify fees, and issue digitally signed certificates.
+- **Government Approved Test Centres (GATCs)**: Carry out specialized calibration and verification testing on precision instruments, flow meters, and weighbridges, generating formal laboratory dossiers for LMO approval.
+- **State & National Administrators**: Monitor cross-jurisdictional verification queues, inspect real-time system health & PostgreSQL connection pools, audit stakeholder activity, and broadcast gazette notifications.
+- **Public & Consumers**: Scan high-correction QR codes via real-time camera or lookup certificate numbers to verify authenticity and report suspicious or tampered certificates.
 
 ---
 
@@ -18,207 +23,224 @@ Consumers, enforcement officials, and businesses can verify certificate authenti
 ```text
 Instrument Owner / Business
         ↓
-Instrument Registration (with Cloudinary Photo Upload)
+Instrument Registration (Photos + TAC + Invoice)
         ↓
-Verification / Re-verification Application
+Statutory Fee Calculation (Schedule XII + Rule 14 Late Surcharges)
         ↓
-Application Review & Allocation (Admin / LMO)
+Verification / Re-verification Application + Payment Receipt Upload
         ↓
-Field / Laboratory Inspection (LMO / GATC)
+LMO Application Review & Fee Verification
+   ├── [Clarification Loop] ↔ Applicant response
         ↓
-Observation Logging & Proof Photos Upload
+Scheduling & Officer / Test Centre Allocation
         ↓
-Certificate Stamping Image Selection
+Inspection & Testing:
+   ├── Field Inspection (LMO): Checklists + Observation Logging + Proof Photos
+   └── Lab Calibration (GATC): Calibration Dossier → LMO Statutory Endorsement
         ↓
 Verification Determination (VERIFIED / REJECTED)
+   ├── If Verified: Tamper-Evident Bilingual PDF Certificate + Level H QR + SHA-256
+   └── If Rejected: Formal Rejection Order with statutory grounds
         ↓
-Statutory Digital Certificate Issuance (A4 PDF + SHA-256 Hash + Level H QR)
+Public QR Scanner / Token Verification & Discrepancy Reporting
         ↓
-Public Verification (Webcam QR Scanner / Certificate Number Lookup)
-        ↓
-Statutory Expiry Tracking & Automated 30-Day Renewal Warnings
+Expiry Tracking & Automated 30-Day Renewal Warnings → Re-Verification
 ```
 
 ---
 
-## 3. Technology Stack & Constraints
+## 3. Technology Stack & Architecture
 
-- **Backend**: Python 3.10+ (FastAPI, Pydantic v2, SQLAlchemy 2.x, Alembic, PostgreSQL, Pytest)
+- **Backend**: Python 3.12 (FastAPI, Pydantic v2, SQLAlchemy 2.x ORM, Alembic migrations, PostgreSQL, Pytest)
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS, Redux Toolkit, RTK Query
-- **Media & Cloud CDN**: Cloudinary REST API & SDK with automatic local storage fallback
-- **Certificates & QR**: ReportLab A4 PDF Engine, Python `qrcode` (Level H), SHA-256 Digest
-- **Client Camera Scanner**: `html5-qrcode` real-time camera stream decoder
-- **Architecture**: Software-Only Modular Monolith (Strictly No Docker, Kubernetes, Kafka, Redis, or AI/ML)
+- **PDF & Digital Certificates**: ReportLab PDF Engine (bilingual certificates and inspection reports)
+- **Security & QR**: SHA-256 cryptographic digests, `qrcode` (Error Correction Level H), Bcrypt, JWT bearer tokens
+- **Public Verification & Scanning**: `html5-qrcode` real-time camera barcode scanner with canvas overlays
+- **Cloud Storage**: Cloudinary REST API / SDK with transparent local disk filesystem fallback
+- **Architecture**: Software-Only Modular Monolith (Strictly compliant with hackathon constraints: no Docker, Kubernetes, Celery, Redis, or microservices)
 
 ---
 
-## 4. Key Functional Capabilities
+## 4. Comprehensive Feature Inventory
 
-### Multi-Method Authentication & RBAC
-- **Password Authentication**: Bcrypt-hashed password authentication with signed JWT bearer tokens.
-- **Passwordless Email OTP**: One-Time Password generation and SMTP email dispatch (Gmail TLS/SSL).
-- **Google OAuth 2.0**: Single Sign-On integration via Google Identity Services.
-- **4 Strict Roles**: `INSTRUMENT_OWNER`, `LMO` (Legal Metrology Officer), `GATC` (Test Centre), `ADMIN` (National Controller).
+### A. Authentication, RBAC & KYC
+- **Triple Auth Engine**: Passwords with bcrypt hashing, passwordless Email OTP (SMTP), and Google OAuth 2.0.
+- **4 Strict Roles**: `INSTRUMENT_OWNER`, `LMO` (Legal Metrology Officer), `GATC` (Government Approved Test Centre), `ADMIN`.
+- **Trader KYC Integration**: Mandatory GSTIN (15-character statutory format), PAN card, trade license number, and business classification during registration and profile management.
 
-### Multi-Photo Device & Proof Management
-- Device photo uploads during instrument registration (up to 3 photos max) delivered via Cloudinary CDN.
-- Inspection proof photo logging by officers during physical verification.
-- Official Certificate Photo Selection: Officer designates which physical inspection photo is stamped onto the legal certificate.
+### B. Instrument Lifecycle & Batch Onboarding
+- **Device Registration**: Register single instruments with serial numbers, model details, capacity ranges, and manufacturer specifications.
+- **Multi-Photo Proof**: Upload up to 3 device images (front, nameplate/weights stamp, seal) with Cloudinary/local storage support.
+- **Statutory Document Storage**: Attach Type Approval Certificate (TAC) and purchase invoice URLs.
+- **High-Throughput CSV Batch Upload**: Bulk register up to 100 instruments in a single CSV transaction.
+- **Batch CSV Template Engine**: Download official CSV template (`/instruments/csv-template`) directly with pre-filled headers and validation examples.
 
-### Batch / CSV Instrument Registration
-- High-throughput CSV batch registration allowing equipment owners and administrators to onboard up to 100 instruments per batch.
-- Statutory CSV template generation (`GET /api/v1/instruments/csv-template`) with predefined headers and sample rows.
-- Atomic row-by-row parsing, UTF-8/Latin-1 auto-decoding, model validation, and comprehensive error reporting (`successful_count`, `failed_count`, and row-level rejection reasons).
+### C. Statutory Fee Calculation Engine (Rule 14 & Schedule XII)
+- **Dedicated Interactive Calculator (`/fees`)**:
+  - Full Schedule XII fee table covering Weighing Instruments (Classes I–IV), Weights, Measures of Length & Capacity, Petroleum Dispensers, and Flow Meters.
+  - Dynamic capacity units (`kg`, `g`, `tonne`, `litre`, `no_unit`).
+  - Compounding quarterly late fee calculations under Rule 14(2) (+50% per quarter or fraction thereof delayed past statutory expiry).
+  - Detailed legal reference citations and statutory breakdown.
 
-### Government-Standard Bilingual Certificate PDF
-- Bilingual Hindi/English header (*भारत सरकार / उपभोक्ता मामले विभाग*).
-- Gold and navy statutory borders, instrument particulars grid, and statutory compliance declaration.
-- **Statutory Anti-Copy Watermark**: Diagonal 45-degree underlay canvas watermark (*"LEGAL METROLOGY DIGITAL CERTIFICATE" / "GOVERNMENT OF INDIA • STATUTORY VERIFICATION"*) preventing photocopied and forged physical representations.
-- Embedded high-correction Level H QR code linking directly to public verification.
-- Tamper-evident cryptographic SHA-256 integrity hash block and officer signature fields.
+### D. Verification Applications & Payment Workflow
+- **Application Flow**: Submit Initial Verification or Re-Verification with instant fee quote.
+- **Payment Receipt Submission**: Applicants upload UTR / transaction references and receipt proof.
+- **LMO Payment Verification**: Officers inspect receipt proof, mark payments as `VERIFIED` or `FAILED`, and record remarks.
+- **Two-Way Clarification Loop**:
+  - LMO requests clarifications on documentation or specs (`CLARIFICATION_ASKED`).
+  - Applicant submits answers directly in the portal, automatically returning the application to `UNDER_REVIEW`.
 
-### Public QR Camera Scanner & Portal (`/verify/lookup`)
-- Real-time webcam / smartphone camera QR code scanner with canvas overlay.
-- Dual-mode verification: camera QR scan or direct manual Certificate Number lookup.
-- Live anti-tampering verification showing statutory validity, owner, inspector, and SHA-256 hash.
+### E. Inspections, Checklists & Laboratory Calibrations
+- **Inspection Queue (`/inspections`)**: Real-time queue filtered by status (`SCHEDULED`, `VERIFIED`, `REJECTED`) and *"Only My Assigned"* toggle.
+- **Pre-Inspection Checklist**: Mandatory verification checklists tailored by instrument type (visual inspection, zero-load test, eccentric loading, repeatability, sealing).
+- **Physical Observation Logging**: Record observed vs standard values, tolerances, and pass/fail criteria per parameter.
+- **GATC Laboratory Calibration Dossier**:
+  - GATC laboratories record temperature, humidity, reference standards, and test observations.
+  - Upload NABL-accredited calibration certificates and submit formal recommendations (`CERTIFY` / `REJECT`).
+- **LMO Statutory Endorsement**:
+  - LMO officers review submitted GATC dossiers in a dedicated audit modal.
+  - Statutory approval or rejection with legal remarks.
+- **ReportLab Inspection PDF Reports**:
+  - Instant PDF download (`/api/v1/inspections/{id}/report/download`) detailing inspection particulars, observations, and verifier credentials.
 
-### Public Notice Board & Visual Analytics
-- Real-time statutory notices and circulars on the landing page, managed by administrators.
-- Dashboard analytical charts: verification lifecycle distribution, monthly volume trends, instrument categories, and certificate expiry breakdown.
+### F. Bilingual Tamper-Evident Certificates & QR Security
+- **Official Bilingual PDF (ReportLab)**:
+  - Formal Government of India / Department of Consumer Affairs header (*भारत सरकार / उपभोक्ता मामले विभाग*).
+  - Gold and navy security borders with anti-counterfeit 45° canvas watermark.
+  - Embedded physical device inspection stamping photo chosen by the officer.
+  - Embedded Level H QR Code and tamper-evident SHA-256 digest block.
+- **Live Expiring Certificates Queue**: Filter certificates expiring within 30 days (`/certificates?tab=expiring`) to proactively trigger renewals.
+- **One-Click Re-Verification Action**: Direct button on certificate dossier pre-populating a re-verification application with past instrument details.
+
+### G. Public QR Scanner & Citizen Discrepancy Reporting
+- **Public Portal (`/verify/lookup` & `/verify/[token]`)**:
+  - Live webcam and smartphone camera QR code scanner.
+  - Manual Certificate Identification Number search.
+  - Complete public verification dossier showing validity status, instrument details, owner name, and officer seal.
+- **Citizen Discrepancy / Whistleblower Reporting**:
+  - Consumers can report suspicious, tampered, or expired certificates directly from the verification view.
+  - Reports enter the regulatory inspection stream for administrative review.
+
+### H. System Health, Tenancy & Visual Analytics
+- **Live System Health Monitor (`/admin/system`)**: Real-time monitoring of API Gateway latency, PostgreSQL connection pool metrics, security subsystem status, and tenancy role distribution.
+- **Operations & Regulatory Analytics (`/analytics` & `/dashboard`)**: Interactive charts for verification volume trends, instrument categories, pass/fail ratios, and certificate expiry forecasts.
+- **Audit & Notice Management (`/notices`)**: Administrative gazette notice publisher displaying real-time alerts across the public portal.
 
 ---
 
-## 5. Local Development Setup
+## 5. Local Setup & Execution Guide
 
 ### Prerequisites
-- Python 3.10+ & Node.js 18+ (Node.js 20 LTS recommended)
-- PostgreSQL 14+ database service running locally or in cloud (e.g., Aiven)
+- **Python 3.10+** (Python 3.12 recommended)
+- **Node.js 18+** (Node.js 20 LTS recommended)
+- **PostgreSQL 14+** running locally on port 5432 (database: `metrix_db`)
 
-### 1. Environment Configuration
-Copy `.env.example` to `.env` in the project root:
-```bash
-cp .env.example .env
-```
-Configure your environment variables:
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/metrix_db
-SECRET_KEY=your-secure-secret-key-min-32-chars
-NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
-PUBLIC_VERIFICATION_BASE_URL=http://localhost:3000/verify
-
-# Google OAuth (Optional)
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-
-# Email OTP (Optional)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-
-# Cloudinary Storage (Optional - falls back to local disk)
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-```
-
-### 2. Backend Setup & Migrations
+### 1. Backend Setup
 ```bash
 cd backend
+
+# Create and activate virtual environment
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1    # On Windows
+# source .venv/bin/activate     # On Linux/macOS
+
+# Install dependencies
 pip install -r requirements.txt
 
-# Run migrations and seed standard accounts
+# Run migrations
 alembic upgrade head
-python seed.py
+
+# Seed fresh test accounts and demo data
+python app/scripts/seed_dev_users.py
 
 # Start FastAPI server
 uvicorn app.main:app --reload --port 8000
 ```
-- **Swagger Docs**: `http://localhost:8000/docs`
-- **Health Check**: `http://localhost:8000/api/v1/health`
+- **API Swagger Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Health Endpoint**: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
 
-### 3. Frontend Setup
-In a separate terminal:
+### 2. Frontend Setup
+In a new terminal:
 ```bash
 cd frontend
+
+# Install npm dependencies
 npm install
+
+# Start Next.js development server
 npm run dev
 ```
-- **Web Application**: `http://localhost:3000`
-- **Public QR Scanner**: `http://localhost:3000/verify/lookup`
+- **Web Application Portal**: [http://localhost:3000](http://localhost:3000)
+- **Public QR Scanner**: [http://localhost:3000/verify/lookup](http://localhost:3000/verify/lookup)
+- **Statutory Fee Calculator**: [http://localhost:3000/fees](http://localhost:3000/fees)
 
 ---
 
 ## 6. Seeded Demonstration Accounts
 
-| Role | Email Address | Password | Primary Capabilities |
+| Role | Email Address | Password | Key Responsibilities & Capabilities |
 | :--- | :--- | :--- | :--- |
-| **ADMIN** | `admin@metrix.gov.in` | `AdminPass123!` | System oversight, user provisioning, notice board control, audit stream |
-| **LMO** | `lmo@metrix.gov.in` | `LmoPass123!` | Application review, inspection scheduling, observation logging, certificate issuance |
-| **GATC** | `gatc@testinglab.org` | `GatcPass123!` | Laboratory calibration testing, observation records, verification determinations |
-| **INSTRUMENT_OWNER** | `owner@example.com` | `OwnerPass123!` | Device registration, photo upload, verification applications, certificate tracking |
+| **Administrator** | `admin@metrix.gov.in` | `Admin@123` | System oversight, connection pool health, notice board, global user management |
+| **Legal Metrology Officer (LMO)** | `lmo.officer@metrix.gov.in` | `Officer@123` | Application review, fee verification, field checklists, GATC dossier endorsement, certificate issuance |
+| **GATC Test Centre** | `gatc.lab@metrix.gov.in` | `Lab@123` | Laboratory calibration testing, observation records, calibration certificate submission |
+| **Instrument Owner** | `trader.owner@metrix.gov.in` | `Owner@123` | Instrument onboarding, fee calculation, application submission, payment receipt upload, certificate tracking |
 
 ---
 
-## 7. Frontend Route Catalog (20 Compiled Routes)
+## 7. Next.js Route Catalog (21 Compiled Routes)
 
-| Route | Access | Description |
+| Route | Access Level | Description |
 | :--- | :--- | :--- |
-| `/` | Public | Landing page with lifecycle explainer, public notice board, and quick search |
-| `/login` | Public | Authentication portal with Password, Email OTP, Google OAuth, and 1-click test credentials |
-| `/auth/google/callback` | Public | OAuth callback receiver and JWT session initializer |
-| `/verify/lookup` | Public | Real-time camera QR code scanner & Certificate Unique Number lookup portal |
-| `/verify/[token]` | Public | Public certificate verification view with anti-tamper SHA-256 fingerprint |
-| `/dashboard` | Authenticated | Role-tailored operational metrics, analytics charts, and action workflows |
-| `/instruments` | Authenticated | Instrument inventory with search, category filtering, and registration modal |
-| `/instruments/[id]` | Authenticated | Instrument dossier, multi-photo gallery, verification history, and deactivation |
-| `/applications` | Authenticated | Verification applications workbench with tabbed status filtering |
-| `/applications/[id]` | Authenticated | Application state machine actions, scheduling, and officer allocation |
-| `/inspections` | LMO, GATC, Admin | Inspection task queue with assignment filtering and quick observation links |
-| `/certificates` | Authenticated | Certificate registry with active/expiring/expired filtering and PDF downloads |
-| `/certificates/[id]` | Authenticated | Official certificate dossier with QR preview, SHA-256 digest, and PDF download |
-| `/notices` | Authenticated | Notice management interface (admin publishing and public feed) |
-| `/notifications` | Authenticated | In-app notification center with read/unread filtering and mark-all actions |
-| `/profile` | Authenticated | User account settings, profile update, and password change |
+| `/` | Public | Citizen landing page, statutory notice board, lifecycle workflow explainer |
+| `/login` | Public | Multi-mode login (Password, OTP, Google SSO, and 1-click role logins) |
+| `/auth/google/callback` | Public | Google OAuth callback handler |
+| `/verify/lookup` | Public | Live camera QR code scanner & certificate lookup portal |
+| `/verify/[token]` | Public | Public certificate verification view with tamper-check & discrepancy reporter |
+| `/fees` | Authenticated / Public | Statutory Schedule XII fee calculator with Rule 14 delay penalty slider |
+| `/dashboard` | Authenticated | Operational metrics, role-specific action items, and live statistics |
+| `/instruments` | Authenticated | Instrument inventory, batch CSV template download, and multi-photo registration |
+| `/instruments/[id]` | Authenticated | Instrument particulars, TAC/invoice links, and historical certificates |
+| `/applications` | Authenticated | Verification applications pipeline with tabbed status filtering |
+| `/applications/[id]` | Authenticated | Application state machine, payment card, clarification loop, and scheduling |
+| `/inspections` | LMO, GATC, Admin | Inspection queue with status tabs, assigned-only filter, and PDF report downloads |
+| `/certificates` | Authenticated | Certificate registry with active/expiring/expired tabs and bulk actions |
+| `/certificates/[id]` | Authenticated | Certificate dossier with QR preview, SHA-256 digest, and re-verify action |
+| `/analytics` | Authenticated | Regulatory analytics dashboard with distribution trends and charts |
+| `/notices` | Authenticated | Administrative notice board manager and public gazette circular feed |
+| `/notifications` | Authenticated | In-app notification center with read/unread filtering |
+| `/profile` | Authenticated | User account settings, trader KYC fields (GSTIN/PAN), and password updates |
 | `/reports` | Authenticated | Regulatory & operational CSV export generator |
 | `/search` | Authenticated | Global cross-entity search across instruments, applications, and certificates |
-| `/admin/users` | Admin | User management table, role filtering, active toggling, and officer provisioning |
-| `/admin/system` | Admin | Real-time system health, database metrics, and audit/error log stream |
+| `/admin/system` | Admin | Real-time system health, database connection pool, and tenancy breakdown |
 
 ---
 
-## 8. REST API Architecture (65 Endpoints across 55 Paths)
+## 8. REST API Summary (70+ Endpoints)
 
-- **Authentication & Profile**: `POST /auth/register`, `POST /auth/login`, `GET|PATCH /auth/me`, `PATCH /auth/me/password`, `POST /auth/otp/send`, `POST /auth/otp/verify`, `GET|POST /auth/google*`
+- **Authentication & KYC**: `POST /auth/register`, `POST /auth/login`, `GET|PATCH /auth/me`, `PATCH /auth/me/password`, `POST /auth/otp/send`, `POST /auth/otp/verify`, `GET|POST /auth/google*`
+- **Fee Engine**: `GET /fees/calculate`
 - **Instruments**: `POST|GET /instruments`, `GET /instruments/csv-template`, `POST /instruments/batch-upload`, `GET|PATCH /instruments/{id}`, `PATCH /instruments/{id}/deactivate`, `POST|DELETE /instruments/{id}/images*`
-- **Applications**: `POST|GET /applications`, `GET|DELETE /applications/{id}`, `PATCH /applications/{id}/status`, `PATCH /applications/{id}/schedule`, `PATCH /applications/{id}/assignment`
-- **Inspections & Proof**: `GET /inspections`, `GET /inspections/{id}`, `POST /applications/{id}/inspection`, `POST|GET /inspections/{id}/observations`, `PATCH /inspections/{id}/result`, `POST /inspections/{id}/images`, `PATCH /inspections/{id}/certificate-image`
-- **Certificates & Verification**: `POST|GET /applications/{id}/certificate`, `GET /certificates`, `GET /certificates/{id}`, `GET /certificates/{id}/download`, `GET /certificates/expiring`, `GET /certificates/expired`, `GET /public/certificates/verify/{token}`, `GET /public/certificates/lookup/{number}`
-- **Public Notices & News**: `GET|POST /notices`, `DELETE /notices/{id}`
-- **Analytics & Operations**: `GET /dashboard/summary`, `GET /dashboard/charts`, `GET|POST|PATCH /notifications*`, `GET /reports/*`, `POST /uploads/image`, `GET /health`
+- **Applications & Payments**: `POST|GET /applications`, `GET|DELETE /applications/{id}`, `PATCH /applications/{id}/status`, `PATCH /applications/{id}/schedule`, `PATCH /applications/{id}/assignment`, `POST /applications/{id}/payment-receipt`, `POST /applications/{id}/verify-payment`, `POST /applications/{id}/request-clarification`, `POST /applications/{id}/submit-clarification`
+- **Inspections & Laboratory Calibrations**: `GET /inspections`, `GET /inspections/{id}`, `POST /applications/{id}/inspection`, `POST|GET /inspections/{id}/observations`, `PATCH /inspections/{id}/result`, `POST /inspections/{id}/images`, `PATCH /inspections/{id}/certificate-image`, `POST /inspections/{id}/gatc-report`, `PATCH /inspections/{id}/lmo-approval`, `GET /inspections/{id}/report/download`
+- **Certificates & Verification**: `POST|GET /applications/{id}/certificate`, `GET /certificates`, `GET /certificates/{id}`, `GET /certificates/{id}/download`, `GET /certificates/expiring`, `GET /certificates/expired`, `GET /public/certificates/verify/{token}`, `GET /public/certificates/lookup/{number}`, `POST /certificates/report-discrepancy`
+- **System Health & Governance**: `GET /health`, `GET /dashboard/summary`, `GET /dashboard/charts`, `GET|POST|PATCH /notifications*`, `GET|POST|DELETE /notices*`, `GET /reports/*`
 
 ---
 
-## 9. Automated Testing & Verification
+## 9. Quality Assurance & Engineering Standards
 
-```bash
-# Backend Pytest Suite (55 tests passing across RBAC, workflows, batch uploads, certificates, domain rules)
-cd backend
-.\.venv\Scripts\python.exe -m pytest
-
-# Frontend Type Safety Check
-cd ../frontend
-npm run type-check
-```
-
-
----
-
-## 10. Engineering Governance & Line Limits
-
-- **Backend Python files**: Maximum **500 lines** per file.
-- **Frontend TS/TSX files**: Maximum **300 lines** per file.
-- **Architecture**: Strict modular monolith (Router → Service → Repository → ORM → PostgreSQL).
-- **Quality**: Type-safe Pydantic contracts, strict error handling, and zero external message brokers.
+- **Backend Pytest Suite**: 65 comprehensive automated tests passing with 100% success rate:
+  ```bash
+  cd backend
+  .venv\Scripts\pytest tests/
+  ```
+- **Frontend Type Safety & Build**: 0 TypeScript compilation errors; 21/21 App Router pages statically and dynamically optimized:
+  ```bash
+  cd frontend
+  npm run build
+  ```
+- **Mandatory File Line Limits**:
+  - Python files: strictly **<= 500 lines** per file.
+  - TypeScript/TSX files: strictly **<= 300 lines** per file.
+  - Test files: strictly **<= 500 lines** per file.
+- **Architectural Principle**: Strict separation of concerns (Routers → Services → Repositories → ORM Models). Models are never directly exposed to API consumers.
