@@ -77,7 +77,7 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({ certificate })
       </div>
 
       {/* Validity & Verification Details */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white/80 p-3.5 rounded-lg border border-emerald-100">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 bg-white/80 p-3.5 rounded-lg border border-emerald-100">
         <div>
           <span className="text-slate-400 block font-medium">Issue Date</span>
           <span className="font-semibold text-slate-800">
@@ -95,8 +95,12 @@ export const CertificateCard: React.FC<CertificateCardProps> = ({ certificate })
           </span>
         </div>
         <div>
-          <span className="text-slate-400 block font-medium">Certified Officer</span>
+          <span className="text-slate-400 block font-medium">Issuing Officer</span>
           <span className="font-semibold text-slate-800">{certificate.issued_by_name || "LMO Authority"}</span>
+        </div>
+        <div>
+          <span className="text-slate-400 block font-medium">Inspecting Officer</span>
+          <span className="font-semibold text-slate-800">{certificate.inspecting_officer_name || "Verified by Inspector"}</span>
         </div>
       </div>
 

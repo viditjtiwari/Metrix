@@ -154,6 +154,67 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
       {/* Google Login */}
       <GoogleLoginButton />
+
+      {/* Demo Credentials Quick-Select */}
+      <div className="pt-3 border-t border-slate-100">
+        <div className="text-[11px] font-semibold text-slate-500 mb-2 uppercase tracking-wider">
+          Quick Demo Login
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              setMethod("password");
+              setEmail("admin@metrix.gov.in");
+              setPassword("Admin@123456");
+              setErrorMsg(null);
+            }}
+            className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 text-left transition group"
+          >
+            <div className="text-[11px] font-bold text-slate-800 group-hover:text-emerald-700">Admin (National)</div>
+            <div className="text-[10px] text-slate-400">admin@metrix.gov.in</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMethod("password");
+              setEmail("lmo@metrix.gov.in");
+              setPassword("Officer@123456");
+              setErrorMsg(null);
+            }}
+            className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 text-left transition group"
+          >
+            <div className="text-[11px] font-bold text-slate-800 group-hover:text-emerald-700">LMO (Officer)</div>
+            <div className="text-[10px] text-slate-400">lmo@metrix.gov.in</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMethod("password");
+              setEmail("gatc@metrix.gov.in");
+              setPassword("Lab@123456");
+              setErrorMsg(null);
+            }}
+            className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 text-left transition group"
+          >
+            <div className="text-[11px] font-bold text-slate-800 group-hover:text-emerald-700">GATC (Lab)</div>
+            <div className="text-[10px] text-slate-400">gatc@metrix.gov.in</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMethod("password");
+              setEmail("owner@example.com");
+              setPassword("Owner@123456");
+              setErrorMsg(null);
+            }}
+            className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 text-left transition group"
+          >
+            <div className="text-[11px] font-bold text-slate-800 group-hover:text-emerald-700">Business Owner</div>
+            <div className="text-[10px] text-slate-400">owner@example.com</div>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

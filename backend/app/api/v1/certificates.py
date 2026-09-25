@@ -1,16 +1,22 @@
-from datetime import date
+import random
+import string
+from datetime import date, datetime, timezone
 from typing import Optional
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user, get_db
-from app.models.enums import CertificateStatus
+from app.models.enums import CertificateStatus, NotificationType, UserRole
 from app.models.user import User
+from app.repositories.user_repository import user_repository
 from app.schemas.certificate import (
     CertificateDetailResponse,
     CertificateListResponse,
+    DiscrepancyReportResponse,
+    DiscrepancyReportSubmit,
     PublicCertificateVerificationResponse,
 )
 from app.services.certificate_service import certificate_service
+from app.services.notification_service import notification_service
 
 router = APIRouter(tags=["Digital Certificates"])
 
@@ -157,3 +163,51 @@ def lookup_certificate_public(
 ) -> PublicCertificateVerificationResponse:
     """Public, unauthenticated lookup endpoint for verifying certificates by certificate number."""
     return certificate_service.verify_by_certificate_number(db, certificate_number=certificate_number)
+
+
+@router.post(
+    "/public/certificates/{verification_token}/report-discrepancy",
+    response_model=DiscrepancyReportResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Public Whistleblower / Anti-Tamper Report",
+)
+def report_certificate_discrepancy(
+    verification_token: str,
+    report: DiscrepancyReportSubmit,
+    db: Session = Depends(get_db),
+) -> DiscrepancyReportResponse:
+    """Unauthenticated whistleblower endpoint for citizens to report tampered or suspicious certificates."""
+    cert = certificate_service.verify_public_token(db, token=verification_token)
+    if not cert:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Verification token not found in registry.",
+        )
+
+    # Generate reference ID
+    date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
+    rand_suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=4))
+    ref_id = f"REP-{date_str}-{rand_suffix}"
+
+    # Notify Legal Metrology Officers
+    officers = user_repository.list_by_roles(db, [UserRole.LMO, UserRole.ADMIN])
+    for officer in officers:
+        notification_service.send_notification(
+            db,
+            user_id=officer.id,
+            type=NotificationType.CERTIFICATE_ISSUED,
+            title="⚠️ Anti-Tamper Discrepancy Report",
+            message=(
+                f"Citizen report filed for Cert {cert.certificate_number} "
+                f"[{report.discrepancy_type}]: {report.description[:100]}... "
+                f"(Ref: {ref_id})"
+            ),
+            entity_type="CERTIFICATE",
+            entity_id=None,
+        )
+
+    return DiscrepancyReportResponse(
+        report_reference_id=ref_id,
+        status="RECEIVED",
+        message="Thank you for your report. The Legal Metrology Department has been alerted for statutory scrutiny.",
+    )

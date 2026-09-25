@@ -5,6 +5,7 @@ import {
   ApplicationResponse,
   ApplicationStatus,
   AssignmentRequest,
+  InspectionChecklistSubmit,
   InspectionDetailResponse,
   InspectionResultUpdate,
   ObservationCreate,
@@ -18,14 +19,7 @@ export const applicationApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getApplications: builder.query<
       ApplicationListResponse,
-      {
-        status?: ApplicationStatus;
-        application_number?: string;
-        instrument_id?: number;
-        page?: number;
-        pageSize?: number;
-        page_size?: number;
-      } | void
+      { status?: ApplicationStatus; application_number?: string; instrument_id?: number; page?: number; pageSize?: number; page_size?: number } | void
     >({
       query: (params) => {
         const queryParams = new URLSearchParams();
@@ -151,6 +145,23 @@ export const applicationApi = baseApi.injectEndpoints({
       ],
     }),
 
+    submitInspectionChecklist: builder.mutation<
+      InspectionDetailResponse,
+      { inspectionId: number; data: InspectionChecklistSubmit; applicationId?: number }
+    >({
+      query: ({ inspectionId, data }) => ({
+        url: `/inspections/${inspectionId}/checklist`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (_res, _err, { inspectionId, applicationId }) => [
+        { type: "Applications", id: applicationId },
+        "Applications",
+        { type: "Inspections", id: inspectionId },
+        "Inspections",
+      ],
+    }),
+
     createApplication: builder.mutation<
       ApplicationResponse,
       ApplicationCreateRequest
@@ -192,6 +203,63 @@ export const applicationApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Inspections"],
     }),
+
+    uploadPaymentReceipt: builder.mutation<
+      ApplicationDetailResponse,
+      { id: number; data: { challan_reference_number: string; challan_date?: string; payment_receipt_url: string; calculated_fee?: number; late_fee?: number; total_fee?: number } }
+    >({
+      query: ({ id, data }) => ({
+        url: `/applications/${id}/payment-receipt`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (_res, _err, { id }) => [{ type: "Applications", id }, "Applications"],
+    }),
+
+    verifyPayment: builder.mutation<
+      ApplicationDetailResponse,
+      { id: number; data: { is_verified: boolean; remarks?: string } }
+    >({
+      query: ({ id, data }) => ({
+        url: `/applications/${id}/payment-verify`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: "Applications", id },
+        "Applications",
+      ],
+    }),
+
+    requestClarification: builder.mutation<
+      ApplicationDetailResponse,
+      { id: number; data: { remarks: string } }
+    >({
+      query: ({ id, data }) => ({
+        url: `/applications/${id}/clarification/request`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: "Applications", id },
+        "Applications",
+      ],
+    }),
+
+    respondClarification: builder.mutation<
+      ApplicationDetailResponse,
+      { id: number; data: { remarks: string } }
+    >({
+      query: ({ id, data }) => ({
+        url: `/applications/${id}/clarification/respond`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: "Applications", id },
+        "Applications",
+      ],
+    }),
   }),
 });
 
@@ -208,9 +276,14 @@ export const {
   useAddObservationMutation,
   useGetObservationsQuery,
   useSubmitInspectionResultMutation,
+  useSubmitInspectionChecklistMutation,
   useDeleteApplicationMutation,
   useUploadInspectionImageMutation,
   useSelectCertificateImageMutation,
+  useUploadPaymentReceiptMutation,
+  useVerifyPaymentMutation,
+  useRequestClarificationMutation,
+  useRespondClarificationMutation,
 } = applicationApi;
 
 export const useListApplicationsQuery = applicationApi.endpoints.getApplications.useQuery;

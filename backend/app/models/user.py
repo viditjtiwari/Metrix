@@ -51,7 +51,9 @@ class User(Base, TimestampMixin):
 
     # 1-to-many relationship with submitted applications
     applications: Mapped[List[VerificationApplication]] = relationship(
-        "VerificationApplication", back_populates="applicant"
+        "VerificationApplication",
+        back_populates="applicant",
+        foreign_keys="VerificationApplication.applicant_id",
     )
 
     # Status history changes recorded by this user
@@ -96,5 +98,11 @@ class StakeholderProfile(Base, TimestampMixin):
     city: Mapped[str] = mapped_column(String(100), nullable=False)
     state: Mapped[str] = mapped_column(String(100), nullable=False)
     pincode: Mapped[str] = mapped_column(String(10), nullable=False)
+
+    # --- KYC / Statutory Identity (Indian Legal Metrology) ---
+    gstin: Mapped[Optional[str]] = mapped_column(String(15), index=True, nullable=True)
+    pan: Mapped[Optional[str]] = mapped_column(String(10), index=True, nullable=True)
+    business_type: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    aadhaar_reference: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
 
     user: Mapped[User] = relationship("User", back_populates="profile")

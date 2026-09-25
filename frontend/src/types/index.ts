@@ -1,4 +1,5 @@
 export * from "./domain";
+export * from "./checklist";
 
 export interface HealthStatus {
   status: "ok" | "degraded";
@@ -20,6 +21,10 @@ export interface StakeholderProfile {
   city: string;
   state: string;
   pincode: string;
+  gstin?: string | null;
+  pan?: string | null;
+  business_type?: string | null;
+  aadhaar_reference?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -54,6 +59,10 @@ export interface RegisterCredentials {
     city: string;
     state: string;
     pincode: string;
+    gstin?: string;
+    pan?: string;
+    business_type?: string;
+    aadhaar_reference?: string;
   };
 }
 

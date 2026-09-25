@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useCreateInstrumentMutation, useUploadInstrumentImageMutation } from "./instrumentApi";
 import { InstrumentType } from "@/types";
 import { Instrument, INSTRUMENT_TYPES, getUnitOptionsForType } from "./instrumentTypes";
-import { Camera, X, Upload } from "lucide-react";
+import { Camera, X, FileText, CheckCircle2 } from "lucide-react";
 
 interface RegisterInstrumentModalProps {
   onClose: () => void;
@@ -23,6 +23,8 @@ export const RegisterInstrumentModal: React.FC<RegisterInstrumentModalProps> = (
   const [maxCapacity, setMaxCapacity] = useState("");
   const [capacityUnit, setCapacityUnit] = useState("kg");
   const [location, setLocation] = useState("");
+  const [tacUrl, setTacUrl] = useState("");
+  const [invoiceUrl, setInvoiceUrl] = useState("");
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,13 +34,8 @@ export const RegisterInstrumentModal: React.FC<RegisterInstrumentModalProps> = (
 
   const handleTypeChange = (newType: InstrumentType) => {
     setInstrumentType(newType);
-    if (newType === "WEIGHING_SCALE" || newType === "ELECTRONIC_BALANCE") {
-      setCapacityUnit("kg");
-    } else if (newType === "PETROL_DISPENSER" || newType === "FLOW_METER") {
-      setCapacityUnit("L");
-    } else if (newType === "LENGTH_MEASURE") {
-      setCapacityUnit("m");
-    }
+    const opts = getUnitOptionsForType(newType);
+    if (opts.length > 0) setCapacityUnit(opts[0].value);
   };
 
   const unitOptions = getUnitOptionsForType(instrumentType);
@@ -58,7 +55,6 @@ export const RegisterInstrumentModal: React.FC<RegisterInstrumentModalProps> = (
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
     if (!manufacturer.trim() || !modelName.trim() || !serialNumber.trim() || !location.trim()) {
       setError("Please fill in all required fields.");
       return;
@@ -80,37 +76,32 @@ export const RegisterInstrumentModal: React.FC<RegisterInstrumentModalProps> = (
         max_capacity: maxCapacity.trim() || undefined,
         capacity_unit: capacityUnit,
         location: location.trim(),
+        tac_certificate_url: tacUrl.trim() || undefined,
+        purchase_invoice_url: invoiceUrl.trim() || undefined,
       }).unwrap();
 
       if (selectedPhoto && created.id) {
         try {
           await uploadImage({ id: created.id, file: selectedPhoto }).unwrap();
         } catch (uploadErr) {
-          console.warn("Photo upload failed during instrument creation:", uploadErr);
+          console.warn("Photo upload failed:", uploadErr);
         }
       }
 
       onSuccess(created);
       onClose();
     } catch (err: unknown) {
-      const msg =
-        (err as { data?: { detail?: string } })?.data?.detail ||
-        "Failed to register instrument. Please verify input data.";
-      setError(msg);
+      setError((err as { data?: { detail?: string } })?.data?.detail || "Failed to register instrument.");
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl max-h-[92vh] overflow-y-auto">
+        <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">
-              Register New Instrument
-            </h2>
-            <p className="text-[11px] text-slate-400">
-              Phase 1: Enter technical specifications and device photos
-            </p>
+            <h2 className="text-base font-semibold text-slate-900">Register New Instrument</h2>
+            <p className="text-[11px] text-slate-400">Specifications, TAC & purchase dossier</p>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100">
             <X className="h-4 w-4" />
@@ -118,153 +109,150 @@ export const RegisterInstrumentModal: React.FC<RegisterInstrumentModalProps> = (
         </div>
 
         {error && (
-          <div className="mt-3 rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700">
-            {error}
-          </div>
+          <div className="mt-2.5 rounded-lg bg-rose-50 border border-rose-200 p-2 text-xs text-rose-700">{error}</div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-3 text-xs">
+        <form onSubmit={handleSubmit} className="mt-3 space-y-2.5 text-xs">
           <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Instrument Type / Category <span className="text-rose-500">*</span>
-            </label>
+            <label className="block font-medium text-slate-700 mb-0.5">Instrument Type *</label>
             <select
               value={instrumentType}
               onChange={(e) => handleTypeChange(e.target.value as InstrumentType)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+              className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:ring-2 focus:ring-emerald-500"
             >
               {INSTRUMENT_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
+                <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             <div>
-              <label className="block font-medium text-slate-700 mb-1">
-                Manufacturer / Brand <span className="text-rose-500">*</span>
-              </label>
+              <label className="block font-medium text-slate-700 mb-0.5">Manufacturer *</label>
               <input
                 type="text"
                 required
                 value={manufacturer}
                 onChange={(e) => setManufacturer(e.target.value)}
                 placeholder="e.g. Essae-Teraoka"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:ring-2 focus:ring-emerald-500"
               />
             </div>
             <div>
-              <label className="block font-medium text-slate-700 mb-1">
-                Model Name / Code <span className="text-rose-500">*</span>
-              </label>
+              <label className="block font-medium text-slate-700 mb-0.5">Model Name *</label>
               <input
                 type="text"
                 required
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
                 placeholder="e.g. DS-215"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:ring-2 focus:ring-emerald-500"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Serial Number (Stamped on plate) <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={serialNumber}
-              onChange={(e) => setSerialNumber(e.target.value)}
-              placeholder="e.g. SN-88201-MH"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-mono"
-            />
+          <div className="grid grid-cols-2 gap-2.5">
+            <div>
+              <label className="block font-medium text-slate-700 mb-0.5">Serial Number *</label>
+              <input
+                type="text"
+                required
+                value={serialNumber}
+                onChange={(e) => setSerialNumber(e.target.value)}
+                placeholder="e.g. SN-88201-MH"
+                className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-mono focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+            <div>
+              <label className="block font-medium text-slate-700 mb-0.5">Operating Location *</label>
+              <input
+                type="text"
+                required
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Warehouse 3, Bay 4, Pune"
+                className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
           </div>
 
-          {/* Min & Max Capacity with Unit Selector */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2">
-            <span className="block font-semibold text-slate-800 text-[11px] uppercase tracking-wider">
-              Capacity Range & Unit
-            </span>
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-2.5">
+            <span className="block font-semibold text-slate-700 text-[10px] uppercase mb-1">Capacity Range & Unit</span>
             <div className="grid grid-cols-3 gap-2">
+              <input
+                type="text"
+                value={minCapacity}
+                onChange={(e) => setMinCapacity(e.target.value)}
+                placeholder="Min (e.g. 50)"
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs"
+              />
+              <input
+                type="text"
+                value={maxCapacity}
+                onChange={(e) => setMaxCapacity(e.target.value)}
+                placeholder="Max (e.g. 500)"
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs"
+              />
+              <select
+                value={capacityUnit}
+                onChange={(e) => setCapacityUnit(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-emerald-700"
+              >
+                {unitOptions.map((u) => (
+                  <option key={u.value} value={u.value}>{u.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Statutory Verification Dossier: TAC and Invoice */}
+          <div className="rounded-xl border border-slate-200 bg-emerald-50/40 p-2.5 space-y-2">
+            <span className="block font-semibold text-emerald-900 text-[10px] uppercase">
+              Statutory Compliance Dossier (LM Rules)
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <label className="block text-[11px] text-slate-500 mb-1">Min Capacity</label>
+                <label className="block text-[11px] text-slate-600 mb-0.5">TAC Approval Doc / URL</label>
                 <input
                   type="text"
-                  value={minCapacity}
-                  onChange={(e) => setMinCapacity(e.target.value)}
-                  placeholder="e.g. 50"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  value={tacUrl}
+                  onChange={(e) => setTacUrl(e.target.value)}
+                  placeholder="https://... or TAC/IND/2026/..."
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs"
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-slate-500 mb-1">Max Capacity</label>
+                <label className="block text-[11px] text-slate-600 mb-0.5">Purchase Invoice URL / No.</label>
                 <input
                   type="text"
-                  value={maxCapacity}
-                  onChange={(e) => setMaxCapacity(e.target.value)}
-                  placeholder="e.g. 500"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  value={invoiceUrl}
+                  onChange={(e) => setInvoiceUrl(e.target.value)}
+                  placeholder="https://... or INV-2026-..."
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs"
                 />
-              </div>
-              <div>
-                <label className="block text-[11px] text-slate-500 mb-1">Unit</label>
-                <select
-                  value={capacityUnit}
-                  onChange={(e) => setCapacityUnit(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium text-emerald-700"
-                >
-                  {unitOptions.map((u) => (
-                    <option key={u.value} value={u.value}>
-                      {u.label}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
           </div>
 
+          {/* Device Photo */}
           <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Installation / Operating Location <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Warehouse 3, Bay 4, Industrial Area, Pune"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-            />
-          </div>
-
-          {/* Instrument Photograph Upload */}
-          <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Instrument Photograph (Optional)
-            </label>
+            <label className="block font-medium text-slate-700 mb-1">Instrument Photograph</label>
             {photoPreview ? (
-              <div className="relative aspect-video rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center">
+              <div className="relative aspect-video max-h-28 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={photoPreview} alt="Preview" className="h-full w-full object-cover" />
                 <button
                   type="button"
-                  onClick={() => {
-                    setSelectedPhoto(null);
-                    setPhotoPreview(null);
-                  }}
-                  className="absolute top-2 right-2 p-1 rounded-full bg-slate-900/70 text-white hover:bg-slate-900"
+                  onClick={() => { setSelectedPhoto(null); setPhotoPreview(null); }}
+                  className="absolute top-1.5 right-1.5 p-1 rounded-full bg-slate-900/70 text-white"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-3 w-3" />
                 </button>
               </div>
             ) : (
-              <label className="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-xl p-3 flex items-center justify-center gap-2 cursor-pointer bg-slate-50 hover:bg-emerald-50/20 transition-colors">
-                <Camera className="h-4 w-4 text-slate-400" />
-                <span className="text-slate-600 font-medium">Add device photo (JPG/PNG &lt; 5MB)</span>
+              <label className="border border-dashed border-slate-300 hover:border-emerald-500 rounded-lg p-2.5 flex items-center justify-center gap-2 cursor-pointer bg-slate-50 hover:bg-emerald-50/20">
+                <Camera className="h-3.5 w-3.5 text-slate-400" />
+                <span className="text-slate-600 text-xs">Add device photo (JPG/PNG &lt; 5MB)</span>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -275,18 +263,18 @@ export const RegisterInstrumentModal: React.FC<RegisterInstrumentModalProps> = (
             )}
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-2.5 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 disabled:opacity-50 transition"
+              className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 disabled:opacity-50"
             >
               {isLoading ? "Registering..." : "Register Instrument"}
             </button>

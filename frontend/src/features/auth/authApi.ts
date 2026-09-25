@@ -20,6 +20,10 @@ export interface ProfileUpdateRequest {
   city?: string;
   state?: string;
   pincode?: string;
+  gstin?: string;
+  pan?: string;
+  business_type?: string;
+  aadhaar_reference?: string;
 }
 
 export interface PasswordChangeRequest {

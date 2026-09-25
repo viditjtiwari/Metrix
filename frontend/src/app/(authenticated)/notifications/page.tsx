@@ -15,11 +15,14 @@ export default function NotificationsPage() {
   const [filterUnread, setFilterUnread] = useState<boolean | undefined>(undefined);
   const [page, setPage] = useState<number>(1);
 
-  const { data, isLoading, isError, refetch } = useGetNotificationsQuery({
-    is_read: filterUnread,
-    page,
-    page_size: 20,
-  });
+  const { data, isLoading, isError, refetch } = useGetNotificationsQuery(
+    {
+      is_read: filterUnread,
+      page,
+      page_size: 20,
+    },
+    { skip: !isAuthenticated || !user }
+  );
 
   const [markRead, { isLoading: isMarkingRead }] = useMarkNotificationReadMutation();
   const [markAllRead, { isLoading: isMarkingAll }] = useMarkAllNotificationsReadMutation();

@@ -95,6 +95,8 @@ class PDFService:
         valid_until: str,
         integrity_hash: str,
         verification_token: str,
+        inspecting_officer_name: str = "Legal Metrology Officer",
+        issuing_officer_name: str = "Authorized Officer",
     ) -> str:
         """Generate PDF certificate, write to disk, and return file path."""
         file_path = self.storage_dir / f"{certificate_number}.pdf"
@@ -137,11 +139,11 @@ class PDFService:
 
         # Certificate Title
         elements.append(Paragraph(
-            "DIGITAL VERIFICATION CERTIFICATE", s["cert_title"]
+            "CERTIFICATE OF VERIFICATION", s["cert_title"]
         ))
         elements.append(Paragraph(
-            "Issued under the Legal Metrology Act, 2009 & "
-            "Standards of Weights & Measures Rules",
+            "(Under Section 24, Legal Metrology Act, 2009 &amp; "
+            "Standards of Weights &amp; Measures Rules)",
             s["cert_subtitle"],
         ))
         elements.append(Spacer(1, 2 * mm))
@@ -288,13 +290,15 @@ class PDFService:
         sig_data = [
             [
                 Paragraph(
-                    "<b>Verified & Digitally Signed</b><br/>"
+                    f"<b>Inspected By</b><br/>"
+                    f"<b>{inspecting_officer_name}</b><br/>"
                     "Legal Metrology Officer / GATC<br/>"
                     "<font color='#64748b' size='7'>Authorized under LM Act, 2009</font>",
                     s["value"],
                 ),
                 Paragraph(
-                    "<b>National Controller</b><br/>"
+                    f"<b>Certificate Issued By</b><br/>"
+                    f"<b>{issuing_officer_name}</b><br/>"
                     "Legal Metrology Division<br/>"
                     "<font color='#64748b' size='7'>Department of Consumer Affairs</font>",
                     s["value"],
@@ -377,7 +381,12 @@ class PDFService:
             s["disclaimer"],
         ))
         elements.append(Paragraph(
-            "METRIX — Online Verification System for Weighing & "
+            "<b>Penalty for non-compliance:</b> Up to ₹10,000 "
+            "(Section 30, Legal Metrology Act, 2009).",
+            s["disclaimer"],
+        ))
+        elements.append(Paragraph(
+            "METRIX — Online Verification System for Weighing &amp; "
             "Measuring Instruments (SIH26036)",
             s["footer"],
         ))

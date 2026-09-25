@@ -7,19 +7,23 @@ import { ApplicationResponse } from "@/types";
 
 interface CreateApplicationModalProps {
   preselectedInstrumentId?: number;
+  initialApplicationType?: string;
   onClose: () => void;
   onSuccess: (app: ApplicationResponse) => void;
 }
 
 export const CreateApplicationModal: React.FC<CreateApplicationModalProps> = ({
   preselectedInstrumentId,
+  initialApplicationType,
   onClose,
   onSuccess,
 }) => {
   const [instrumentId, setInstrumentId] = useState<number | string>(
     preselectedInstrumentId || ""
   );
-  const [applicationType, setApplicationType] = useState<string>("INITIAL");
+  const [applicationType, setApplicationType] = useState<string>(
+    initialApplicationType || "INITIAL"
+  );
   const [remarks, setRemarks] = useState("");
   const [error, setError] = useState<string | null>(null);
 

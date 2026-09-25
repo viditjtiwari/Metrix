@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, Field
-from app.models.enums import ApplicationStatus
+from app.models.enums import ApplicationStatus, PaymentStatus
 from app.schemas.inspection import InspectionResponse
 
 
@@ -32,6 +32,32 @@ class StatusHistoryResponse(BaseModel):
     created_at: datetime
 
 
+class PaymentReceiptSubmit(BaseModel):
+    """Schema for applicant uploading treasury / SBI e-pay challan receipt."""
+    challan_reference_number: str = Field(..., min_length=3, max_length=64)
+    challan_date: Optional[date] = None
+    payment_receipt_url: str = Field(..., max_length=512)
+    calculated_fee: int = Field(0, ge=0)
+    late_fee: int = Field(0, ge=0)
+    total_fee: int = Field(0, ge=0)
+
+
+class PaymentVerificationSubmit(BaseModel):
+    """Schema for LMO / Admin verification of manual challan receipt."""
+    is_verified: bool = Field(..., description="True if receipt is verified, False if rejected")
+    remarks: Optional[str] = Field(None, description="Officer verification remarks or reason for rejection")
+
+
+class ClarificationRequestSubmit(BaseModel):
+    """Schema for LMO requesting clarification from applicant."""
+    remarks: str = Field(..., min_length=5, description="Specific clarification query or documents required")
+
+
+class ClarificationResponseSubmit(BaseModel):
+    """Schema for applicant submitting response to clarification."""
+    remarks: str = Field(..., min_length=2, description="Applicant response explanation and corrective action")
+
+
 class ApplicationResponse(BaseModel):
     """Schema for verification application summary response."""
     model_config = ConfigDict(from_attributes=True)
@@ -44,6 +70,19 @@ class ApplicationResponse(BaseModel):
     status: ApplicationStatus
     submitted_at: Optional[datetime] = None
     remarks: Optional[str] = None
+
+    # Payment tracking
+    payment_status: PaymentStatus = PaymentStatus.PENDING
+    payment_receipt_url: Optional[str] = None
+    challan_reference_number: Optional[str] = None
+    challan_date: Optional[date] = None
+    calculated_fee: int = 0
+    late_fee: int = 0
+    total_fee: int = 0
+    payment_uploaded_at: Optional[datetime] = None
+    payment_verified_at: Optional[datetime] = None
+    payment_remarks: Optional[str] = None
+
     created_at: datetime
     updated_at: datetime
 

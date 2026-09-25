@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from app.models.enums import CertificateStatus
 
 
@@ -68,3 +68,21 @@ class CertificateListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class DiscrepancyReportSubmit(BaseModel):
+    """Payload for whistleblower / public reporting of suspicious or tampered certificates."""
+    discrepancy_type: str = Field(
+        ..., description="SEAL_TAMPERED, EXPIRED_IN_USE, SERIAL_MISMATCH, LOCATION_MISMATCH, OTHER"
+    )
+    description: str = Field(..., min_length=10, max_length=1000)
+    reporter_name: Optional[str] = Field(None, max_length=128)
+    reporter_phone: Optional[str] = Field(None, max_length=32)
+    evidence_image_url: Optional[str] = Field(None, max_length=512)
+
+
+class DiscrepancyReportResponse(BaseModel):
+    """Confirmation response for whistleblower submission."""
+    report_reference_id: str
+    status: str = "RECEIVED"
+    message: str

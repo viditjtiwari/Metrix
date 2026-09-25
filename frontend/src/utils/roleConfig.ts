@@ -57,6 +57,8 @@ export const MENU_ITEMS: MenuItem[] = [
   { label: "My Instruments",   href: "/instruments",   icon: "Scale",           roles: ["INSTRUMENT_OWNER"], group: "services" },
   { label: "My Applications",  href: "/applications",  icon: "FileText",        roles: ["INSTRUMENT_OWNER"], group: "services" },
   { label: "My Certificates",  href: "/certificates",  icon: "Award",           roles: ["INSTRUMENT_OWNER"], group: "services" },
+  { label: "Fee Calculator",   href: "/fees",          icon: "Calculator",      roles: ["INSTRUMENT_OWNER"], group: "services" },
+  { label: "Circulars",        href: "/notices",       icon: "Megaphone",       roles: ["INSTRUMENT_OWNER"], group: "services" },
   { label: "Notifications",    href: "/notifications", icon: "Bell",            roles: ["INSTRUMENT_OWNER"], group: "alerts" },
 
   // ── LMO (Officer Portal) ──
@@ -64,15 +66,22 @@ export const MENU_ITEMS: MenuItem[] = [
   { label: "Review Queue",     href: "/applications",  icon: "FileText",        roles: ["LMO"], group: "operations" },
   { label: "My Inspections",   href: "/inspections",   icon: "ClipboardCheck",  roles: ["LMO"], group: "operations" },
   { label: "Certificates",     href: "/certificates",  icon: "Award",           roles: ["LMO"], group: "operations" },
+  { label: "Fee Calculator",   href: "/fees",          icon: "Calculator",      roles: ["LMO"], group: "tools" },
+  { label: "Analytics",        href: "/analytics",     icon: "BarChart3",       roles: ["LMO"], group: "tools" },
   { label: "Search",           href: "/search",        icon: "Search",          roles: ["LMO"], group: "tools" },
   { label: "Reports",          href: "/reports",       icon: "Download",        roles: ["LMO"], group: "tools" },
+  { label: "Notices",          href: "/notices",       icon: "Megaphone",       roles: ["LMO"], group: "alerts" },
   { label: "Notifications",    href: "/notifications", icon: "Bell",            roles: ["LMO"], group: "alerts" },
 
   // ── GATC (Lab Portal) ──
-  { label: "Dashboard",           href: "/dashboard",     icon: "LayoutDashboard", roles: ["GATC"], group: "overview" },
+  { label: "Dashboard",            href: "/dashboard",     icon: "LayoutDashboard", roles: ["GATC"], group: "overview" },
   { label: "Assigned Inspections", href: "/inspections",  icon: "ClipboardCheck",  roles: ["GATC"], group: "lab" },
-  { label: "Certificates",        href: "/certificates",  icon: "Award",           roles: ["GATC"], group: "lab" },
-  { label: "Notifications",       href: "/notifications", icon: "Bell",            roles: ["GATC"], group: "alerts" },
+  { label: "Certificates",         href: "/certificates",  icon: "Award",           roles: ["GATC"], group: "lab" },
+  { label: "Fee Calculator",       href: "/fees",          icon: "Calculator",      roles: ["GATC"], group: "lab" },
+  { label: "Analytics",            href: "/analytics",     icon: "BarChart3",       roles: ["GATC"], group: "lab" },
+  { label: "Reports",              href: "/reports",       icon: "Download",        roles: ["GATC"], group: "lab" },
+  { label: "Notices",              href: "/notices",       icon: "Megaphone",       roles: ["GATC"], group: "lab" },
+  { label: "Notifications",        href: "/notifications", icon: "Bell",            roles: ["GATC"], group: "alerts" },
 
   // ── Admin (Admin Console) ──
   { label: "Dashboard",        href: "/dashboard",      icon: "LayoutDashboard", roles: ["ADMIN"], group: "overview" },
@@ -81,8 +90,10 @@ export const MENU_ITEMS: MenuItem[] = [
   { label: "All Instruments",  href: "/instruments",    icon: "Scale",           roles: ["ADMIN"], group: "management" },
   { label: "All Certificates", href: "/certificates",   icon: "Award",           roles: ["ADMIN"], group: "management" },
   { label: "Inspections",      href: "/inspections",    icon: "ClipboardCheck",  roles: ["ADMIN"], group: "management" },
+  { label: "Fee Calculator",   href: "/fees",           icon: "Calculator",      roles: ["ADMIN"], group: "tools" },
+  { label: "Analytics",        href: "/analytics",      icon: "BarChart3",       roles: ["ADMIN"], group: "tools" },
   { label: "Reports",          href: "/reports",        icon: "Download",        roles: ["ADMIN"], group: "tools" },
-  { label: "Notices",          href: "/admin/notices",  icon: "Megaphone",       roles: ["ADMIN"], group: "admin" },
+  { label: "Notices",          href: "/notices",        icon: "Megaphone",       roles: ["ADMIN"], group: "admin" },
   { label: "System",           href: "/admin/system",   icon: "Server",          roles: ["ADMIN"], group: "admin" },
   { label: "Notifications",    href: "/notifications",  icon: "Bell",            roles: ["ADMIN"], group: "alerts" },
 ];

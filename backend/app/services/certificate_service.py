@@ -1,21 +1,19 @@
 from __future__ import annotations
-from datetime import date, datetime, timedelta, timezone
-import hashlib
-import json
+import calendar
+from datetime import date, datetime, timezone
 import secrets
-from typing import Optional, Tuple
+from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.certificate import Certificate
-from app.models.enums import ApplicationStatus, CertificateStatus, NotificationType, UserRole
+from app.models.enums import ApplicationStatus, CertificateStatus, NotificationType, UserRole, get_validity_months
 from app.models.user import User
 from app.repositories.application_repository import application_repository
 from app.repositories.certificate_repository import certificate_repository
 from app.schemas.certificate import (
     CertificateDetailResponse,
     CertificateListResponse,
-    CertificateResponse,
     PublicCertificateVerificationResponse,
 )
 from app.services.certificate_hasher import compute_integrity_hash, generate_canonical_payload
@@ -24,10 +22,7 @@ from app.services.pdf_service import pdf_service
 
 
 class CertificateService:
-    """Service managing the legal metrology certificate lifecycle, SHA-256 integrity digests,
-
-    PDF generation with embedded QR tokens, and public verification.
-    """
+    """Service managing certificate lifecycle, SHA-256 digests, and PDF generation."""
 
     def generate_canonical_payload(self, **kwargs) -> str:
         """Create a deterministic canonical JSON string for SHA-256 integrity calculation."""
@@ -144,10 +139,15 @@ class CertificateService:
                 detail="Associated instrument record not found for this application.",
             )
 
-        # 5. Calculate validity and identifiers
+        # 5. Calculate validity (dynamic per instrument type, Rule 13)
         now = datetime.now(timezone.utc)
         valid_from = now.date()
-        valid_until = valid_from + timedelta(days=settings.CERTIFICATE_VALIDITY_DAYS)
+        validity_months = get_validity_months(instrument.instrument_type)
+        m = valid_from.month - 1 + validity_months
+        y = valid_from.year + m // 12
+        m = m % 12 + 1
+        d = min(valid_from.day, calendar.monthrange(y, m)[1])
+        valid_until = date(y, m, d)
         certificate_number = self.generate_certificate_number(db)
         verification_token = self.generate_verification_token()
 
@@ -157,6 +157,17 @@ class CertificateService:
             if (owner and owner.profile and owner.profile.business_name)
             else (owner.full_name if owner else "Authorized Owner")
         )
+
+        # Identify inspecting officer from the inspection record
+        inspection = application.inspection
+        inspecting_officer = (
+            inspection.assigned_to if inspection else None
+        )
+        inspecting_officer_name = (
+            inspecting_officer.full_name
+            if inspecting_officer else "Legal Metrology Officer"
+        )
+        issuing_officer_name = current_user.full_name
 
         # 6. Generate canonical payload and SHA-256 integrity hash
         canonical_str = self.generate_canonical_payload(
@@ -174,7 +185,7 @@ class CertificateService:
         )
         integrity_hash = self.calculate_integrity_hash(canonical_str)
 
-        # 7. Generate PDF with embedded QR code
+        # 7. Generate PDF with embedded QR code and officer names
         try:
             pdf_path = pdf_service.generate_certificate_pdf(
                 certificate_number=certificate_number,
@@ -192,6 +203,8 @@ class CertificateService:
                 valid_until=valid_until.strftime("%Y-%m-%d"),
                 integrity_hash=integrity_hash,
                 verification_token=verification_token,
+                inspecting_officer_name=inspecting_officer_name,
+                issuing_officer_name=issuing_officer_name,
             )
         except Exception as e:
             raise HTTPException(

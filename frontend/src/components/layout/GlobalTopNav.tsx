@@ -30,7 +30,7 @@ export function GlobalTopNav() {
 
   const { data: notifData } = useGetNotificationsQuery(
     { page: 1, page_size: 5 },
-    { skip: !isAuthenticated, pollingInterval: 30000 }
+    { skip: !isAuthenticated || !user, pollingInterval: 30000 }
   );
   const unreadCount = notifData?.unread_count ?? 0;
 

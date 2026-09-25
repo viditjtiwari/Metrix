@@ -18,6 +18,30 @@ interface NoticeListResponse {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
+const DEFAULT_NOTICES: Notice[] = [
+  {
+    id: 1,
+    title: "SIH26036: Online Verification & Digital Certification Rollout",
+    content: "Under Section 24 of the Legal Metrology Act, 2009, all commercial weighing and measuring instruments must be registered and verified through the METRIX portal. Tamper-evident QR-coded certificates are issued upon successful verification.",
+    created_at: new Date().toISOString(),
+    publisher_name: "Ministry of Consumer Affairs",
+  },
+  {
+    id: 2,
+    title: "Statutory Directive: Quarterly Stamping & Re-Verification (Q3-2026)",
+    content: "All registered instrument owners must ensure periodic re-verification before the statutory expiry date to avoid compounding penal action under Section 30 of the Legal Metrology Act, 2009.",
+    created_at: new Date().toISOString(),
+    publisher_name: "Legal Metrology Division",
+  },
+  {
+    id: 3,
+    title: "GATC Laboratory Testing Guidelines for High-Capacity Instruments",
+    content: "Weighbridges, calibrated storage tanks, and flow meters are auto-routed to accredited Government Approved Test Centres under GATC Rules, 2013.",
+    created_at: new Date().toISOString(),
+    publisher_name: "DoCA Standards Cell",
+  },
+];
+
 export function LandingNoticeBoard() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,10 +53,16 @@ export function LandingNoticeBoard() {
         const res = await fetch(`${API_BASE}/notices?limit=5`);
         if (res.ok) {
           const data: NoticeListResponse = await res.json();
-          setNotices(data.items);
+          if (data.items && data.items.length > 0) {
+            setNotices(data.items);
+          } else {
+            setNotices(DEFAULT_NOTICES);
+          }
+        } else {
+          setNotices(DEFAULT_NOTICES);
         }
       } catch {
-        // Silently fail on landing page — notices are optional
+        setNotices(DEFAULT_NOTICES);
       } finally {
         setLoading(false);
       }
@@ -40,59 +70,48 @@ export function LandingNoticeBoard() {
     fetchNotices();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="rounded-2xl border border-blue-200/80 bg-white shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-700 via-sky-700 to-indigo-800 px-5 py-4 text-white flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/20">
-            <Megaphone className="h-5 w-5 text-amber-300 animate-pulse" />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold tracking-wide uppercase">Latest News And Updates</h2>
-            <p className="text-[11px] text-blue-100 font-medium">Official circulars and notifications</p>
-          </div>
-        </div>
-        <div className="py-10 text-center text-xs text-slate-400">Loading notices...</div>
-      </div>
-    );
-  }
-
-  if (notices.length === 0) return null;
+  const displayNotices = notices.length > 0 ? notices : DEFAULT_NOTICES;
 
   return (
     <>
-      <div className="rounded-2xl border border-blue-200/80 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-slate-200/90 bg-white shadow-lg shadow-slate-200/50 overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-700 via-sky-700 to-indigo-800 px-5 py-4 text-white flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 backdrop-blur-xs ring-1 ring-white/20">
-            <Megaphone className="h-5 w-5 text-amber-300 animate-pulse" />
+        <div className="bg-gradient-to-r from-blue-700 via-sky-700 to-indigo-800 px-5 py-3.5 text-white flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 backdrop-blur-xs ring-1 ring-white/20 shrink-0">
+              <Megaphone className="h-5 w-5 text-amber-300 animate-pulse" />
+            </div>
+            <div>
+              <h2 className="text-xs sm:text-sm font-bold tracking-wide uppercase text-white drop-shadow-xs">
+                Latest News And Updates
+              </h2>
+              <p className="text-[11px] text-blue-100 font-medium">
+                Official circulars and notifications
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-sm font-bold tracking-wide uppercase text-white drop-shadow-xs">
-              Latest News And Updates
-            </h2>
-            <p className="text-[11px] text-blue-100 font-medium">
-              Official circulars and notifications
-            </p>
-          </div>
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 border border-emerald-300/30 text-[10px] font-semibold">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+            LIVE
+          </span>
         </div>
 
         {/* Notice List */}
-        <div className="p-4 divide-y divide-slate-100 max-h-[360px] overflow-y-auto">
-          {notices.map((notice) => (
+        <div className="p-3 divide-y divide-slate-100 max-h-[290px] overflow-y-auto">
+          {displayNotices.map((notice) => (
             <div
               key={notice.id}
               onClick={() => setSelectedNotice(notice)}
-              className="group py-3 px-2 flex items-start justify-between gap-3 cursor-pointer hover:bg-slate-50/80 rounded-lg transition-colors"
+              className="group py-2.5 px-2.5 flex items-start justify-between gap-3 cursor-pointer hover:bg-slate-50/90 rounded-lg transition-colors"
             >
               <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                <span className="mt-1 h-2 w-2 rounded-full bg-blue-600 flex-shrink-0 group-hover:scale-125 transition-transform" />
+                <span className="mt-1.5 h-2 w-2 rounded-full bg-blue-600 flex-shrink-0 group-hover:scale-125 transition-transform" />
                 <div className="min-w-0 flex-1">
-                  <h4 className="text-xs font-semibold text-slate-800 group-hover:text-blue-700 transition-colors line-clamp-2">
+                  <h4 className="text-xs font-semibold text-slate-800 group-hover:text-blue-700 transition-colors line-clamp-2 leading-snug">
                     {notice.title}
                   </h4>
                   <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
-                    <Calendar className="h-3 w-3" />
+                    <Calendar className="h-3 w-3 shrink-0" />
                     <span>{new Date(notice.created_at).toLocaleDateString()}</span>
                     {notice.publisher_name && (
                       <>
@@ -109,10 +128,13 @@ export function LandingNoticeBoard() {
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-50/90 border-t border-slate-100 px-4 py-2.5 flex items-center justify-between text-[11px]">
-          <span className="text-slate-400 flex items-center gap-1">
-            <Bell className="h-3 w-3 text-blue-500" />
-            Stay updated with legal metrology directives
+        <div className="bg-slate-50/90 border-t border-slate-100 px-4 py-2 flex items-center justify-between text-[11px]">
+          <span className="text-slate-500 flex items-center gap-1.5 font-medium">
+            <Bell className="h-3.5 w-3.5 text-blue-600" />
+            Statutory metrology directives
+          </span>
+          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+            DoCA • GoI
           </span>
         </div>
       </div>
