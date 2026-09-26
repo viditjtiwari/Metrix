@@ -54,6 +54,7 @@ The METRIX documentation is structured into four clearly separated operational l
 | **17** | [17-deployment-and-environment.md](17-deployment-and-environment.md) | Bare-metal deployment, `.env` reference, process management, production checklist |
 | **18** | [18-project-rules.md](18-project-rules.md) | Engineering rules summary, line limits (500/300), rule protection policy |
 | **19** | [19-developer-guide.md](19-developer-guide.md) | Onboarding guide, changelog, frontend architecture, and backend gaps reference |
+| **Diag** | [SYSTEM_DIAGRAMS.md](SYSTEM_DIAGRAMS.md) | Master diagrams: Use Case, ER Diagram, Flowcharts, and UML Class/Sequence/State/Component diagrams |
 
 ---
 
