@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -28,9 +28,15 @@ export function GlobalTopNav() {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Prevents hydration mismatch: server always renders unauthenticated nav.
+  // Auth-dependent links only appear after the first client render.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  const showAuth = mounted && isAuthenticated;
+
   const { data: notifData } = useGetNotificationsQuery(
     { page: 1, page_size: 5 },
-    { skip: !isAuthenticated || !user, pollingInterval: 30000 }
+    { skip: !showAuth || !user, pollingInterval: 30000 }
   );
   const unreadCount = notifData?.unread_count ?? 0;
 
@@ -112,7 +118,7 @@ export function GlobalTopNav() {
             <span>Verify QR</span>
           </Link>
 
-          {isAuthenticated && (
+          {showAuth && (
             <>
               <Link
                 href="/dashboard"
@@ -147,7 +153,7 @@ export function GlobalTopNav() {
 
         {/* Right Action Section */}
         <div className="flex items-center gap-2.5">
-          {isAuthenticated && (
+          {showAuth && (
             <Link
               href="/search"
               title="Search System Registry"
@@ -157,7 +163,7 @@ export function GlobalTopNav() {
             </Link>
           )}
 
-          {isAuthenticated && (
+          {showAuth && (
             <Link
               href="/notifications"
               title="Notifications"
@@ -172,7 +178,7 @@ export function GlobalTopNav() {
             </Link>
           )}
 
-          {isAuthenticated && user ? (
+          {showAuth && user ? (
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
               <Link
                 href="/profile"
@@ -241,7 +247,7 @@ export function GlobalTopNav() {
           >
             <QrCode size={15} /> Verify QR Certificate
           </Link>
-          {isAuthenticated && (
+          {showAuth && (
             <>
               <Link
                 href="/dashboard"

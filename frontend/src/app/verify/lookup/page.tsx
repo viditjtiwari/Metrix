@@ -3,9 +3,13 @@
 import React, { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Camera, Search, Shield, AlertTriangle } from "lucide-react";
 import { PublicCertificateVerificationResponse } from "@/types";
-import { CameraQrScanner } from "@/features/verification/CameraQrScanner";
+const CameraQrScanner = dynamic(
+  () => import("@/features/verification/CameraQrScanner").then((m) => m.CameraQrScanner),
+  { ssr: false, loading: () => <div className="p-10 text-center text-xs text-slate-400">Loading scanner...</div> }
+);
 import { CertificateResultCard } from "@/features/verification/CertificateResultCard";
 import { GlobalTopNav } from "@/components/layout/GlobalTopNav";
 import { GlobalFooter } from "@/components/layout/GlobalFooter";

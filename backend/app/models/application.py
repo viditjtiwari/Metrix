@@ -49,7 +49,7 @@ class VerificationApplication(Base, TimestampMixin):
 
     # --- Payment / Fee Tracking (Rule 14) ---
     payment_status: Mapped[PaymentStatus] = mapped_column(
-        Enum(PaymentStatus, name="payment_status"),
+        Enum(PaymentStatus, name="payment_status", native_enum=False),
         default=PaymentStatus.PENDING,
         index=True,
         nullable=False,

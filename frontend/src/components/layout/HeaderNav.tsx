@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logout } from "@/features/auth/authSlice";
@@ -8,6 +8,11 @@ import { logout } from "@/features/auth/authSlice";
 export function HeaderNav() {
   const dispatch = useAppDispatch();
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+
+  // Prevents hydration mismatch: auth-dependent links only after mount
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  const showAuth = mounted && isAuthenticated;
 
   return (
     <div className="flex items-center space-x-4 text-xs font-medium">
@@ -17,7 +22,7 @@ export function HeaderNav() {
       >
         Home
       </Link>
-      {isAuthenticated && (
+      {showAuth && (
         <>
           <Link
             href="/dashboard"
@@ -52,7 +57,7 @@ export function HeaderNav() {
         </>
       )}
 
-      {isAuthenticated && user ? (
+      {showAuth && user ? (
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-1.5 bg-slate-100 py-1 px-2.5 rounded-full text-slate-700">
             <span className="font-semibold">{user.full_name}</span>
