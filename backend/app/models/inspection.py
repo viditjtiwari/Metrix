@@ -42,7 +42,7 @@ class Inspection(Base, TimestampMixin):
 
     # --- Inspection Mode (LMO field vs GATC lab) ---
     inspection_mode: Mapped[Optional[InspectionMode]] = mapped_column(
-        Enum(InspectionMode, name="inspection_mode"), nullable=True
+        Enum(InspectionMode, name="inspection_mode", native_enum=False), nullable=True
     )
 
     # --- Timing ---
