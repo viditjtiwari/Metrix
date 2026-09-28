@@ -204,6 +204,18 @@ export const applicationApi = baseApi.injectEndpoints({
       invalidatesTags: ["Inspections"],
     }),
 
+    uploadChallanImage: builder.mutation<{ url: string }, File>({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return {
+          url: `/uploads/image`,
+          method: "POST",
+          body: formData,
+        };
+      },
+    }),
+
     uploadPaymentReceipt: builder.mutation<
       ApplicationDetailResponse,
       { id: number; data: { challan_reference_number: string; challan_date?: string; payment_receipt_url: string; calculated_fee?: number; late_fee?: number; total_fee?: number } }
@@ -280,6 +292,7 @@ export const {
   useDeleteApplicationMutation,
   useUploadInspectionImageMutation,
   useSelectCertificateImageMutation,
+  useUploadChallanImageMutation,
   useUploadPaymentReceiptMutation,
   useVerifyPaymentMutation,
   useRequestClarificationMutation,

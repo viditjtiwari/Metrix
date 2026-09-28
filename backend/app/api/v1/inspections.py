@@ -320,7 +320,13 @@ def _check_report_access(inspection, user: User) -> None:
     if user.role == UserRole.ADMIN:
         return  # Admin can download any report
 
-    if user.role in (UserRole.LMO, UserRole.GATC):
+    if user.role == UserRole.LMO:
+        # LMOs oversee the verification lifecycle: they schedule inspections,
+        # assign verifiers (including GATC labs), and issue certificates.
+        # They may download any completed inspection report.
+        return
+
+    if user.role == UserRole.GATC:
         if inspection.assigned_to_id != user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

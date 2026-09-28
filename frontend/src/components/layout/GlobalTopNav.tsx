@@ -52,26 +52,26 @@ export function GlobalTopNav() {
       </div>
 
       {/* 2. Official Government Branding Sub-Bar */}
-      <div className="bg-slate-900 text-slate-300 text-[11px] py-1 px-4 sm:px-6 border-b border-slate-800">
+      <div className="border-b border-slate-100 text-[11px] py-1.5 px-4 sm:px-6 text-slate-600">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-200 tracking-wide">भारत सरकार / Government of India</span>
-            <span className="hidden md:inline text-slate-600">•</span>
-            <span className="hidden md:inline text-slate-400">
+            <span className="font-semibold text-slate-700 tracking-wide">भारत सरकार / Government of India</span>
+            <span className="hidden md:inline text-slate-300">•</span>
+            <span className="hidden md:inline text-slate-500">
               Department of Consumer Affairs — Legal Metrology Division
             </span>
           </div>
           <div className="flex items-center gap-3">
             <a
               href="tel:1915"
-              className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 transition font-medium"
+              className="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 transition font-medium"
               title="National Consumer Helpline"
             >
               <PhoneCall size={11} />
               <span>NCH: 1915 (Toll-Free)</span>
             </a>
-            <span className="text-slate-700 hidden sm:inline">|</span>
-            <span className="hidden sm:inline px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-amber-300 font-mono">
+            <span className="text-slate-300 hidden sm:inline">|</span>
+            <span className="hidden sm:inline px-1.5 py-0.5 rounded bg-emerald-50 text-[10px] text-emerald-800 border border-emerald-200 font-mono font-medium">
               SIH26036
             </span>
           </div>
