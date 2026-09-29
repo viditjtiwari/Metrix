@@ -4,13 +4,19 @@ from datetime import date, datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
-from app.core.dependencies import get_current_user, get_db
+from app.core.dependencies import get_current_user, get_db, require_role
 from app.models.enums import CertificateStatus, NotificationType, UserRole
+from app.models.discrepancy_report import DiscrepancyReport
 from app.models.user import User
 from app.repositories.user_repository import user_repository
+from app.repositories.discrepancy_report_repository import discrepancy_report_repository
+from app.repositories.certificate_repository import certificate_repository
 from app.schemas.certificate import (
     CertificateDetailResponse,
     CertificateListResponse,
+    DiscrepancyReportActionRequest,
+    DiscrepancyReportDetailResponse,
+    DiscrepancyReportListResponse,
     DiscrepancyReportResponse,
     DiscrepancyReportSubmit,
     PublicCertificateVerificationResponse,
@@ -177,7 +183,8 @@ def report_certificate_discrepancy(
     db: Session = Depends(get_db),
 ) -> DiscrepancyReportResponse:
     """Unauthenticated whistleblower endpoint for citizens to report tampered or suspicious certificates."""
-    cert = certificate_service.verify_public_token(db, token=verification_token)
+    # Get the raw Certificate model (not the Pydantic response) for the FK
+    cert = certificate_repository.get_by_verification_token(db, verification_token)
     if not cert:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -188,6 +195,19 @@ def report_certificate_discrepancy(
     date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
     rand_suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=4))
     ref_id = f"REP-{date_str}-{rand_suffix}"
+
+    # Persist the report to the database
+    db_report = DiscrepancyReport(
+        report_reference_id=ref_id,
+        certificate_id=cert.id,
+        discrepancy_type=report.discrepancy_type,
+        description=report.description,
+        reporter_name=report.reporter_name,
+        reporter_phone=report.reporter_phone,
+        evidence_image_url=report.evidence_image_url,
+        status="PENDING",
+    )
+    discrepancy_report_repository.create(db, db_report)
 
     # Notify Legal Metrology Officers
     officers = user_repository.list_by_roles(db, [UserRole.LMO, UserRole.ADMIN])
@@ -206,8 +226,111 @@ def report_certificate_discrepancy(
             entity_id=None,
         )
 
+    db.commit()
+
     return DiscrepancyReportResponse(
         report_reference_id=ref_id,
         status="RECEIVED",
         message="Thank you for your report. The Legal Metrology Department has been alerted for statutory scrutiny.",
     )
+
+
+# ── Discrepancy Reports Management (LMO / Admin) ───────────────
+
+
+def _enrich_report(report: DiscrepancyReport) -> DiscrepancyReportDetailResponse:
+    """Convert DB model to response schema with joined fields."""
+    return DiscrepancyReportDetailResponse(
+        id=report.id,
+        report_reference_id=report.report_reference_id,
+        certificate_id=report.certificate_id,
+        certificate_number=(
+            report.certificate.certificate_number
+            if report.certificate else None
+        ),
+        discrepancy_type=report.discrepancy_type,
+        description=report.description,
+        reporter_name=report.reporter_name,
+        reporter_phone=report.reporter_phone,
+        evidence_image_url=report.evidence_image_url,
+        status=report.status,
+        reviewed_by_id=report.reviewed_by_id,
+        reviewed_by_name=(
+            report.reviewed_by.full_name
+            if report.reviewed_by else None
+        ),
+        action_remarks=report.action_remarks,
+        reviewed_at=report.reviewed_at,
+        created_at=report.created_at,
+        updated_at=report.updated_at,
+    )
+
+
+@router.get(
+    "/discrepancy-reports",
+    response_model=DiscrepancyReportListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List Discrepancy Reports (LMO / Admin)",
+)
+def list_discrepancy_reports(
+    status_filter: Optional[str] = Query(
+        None, alias="status",
+        description="Filter: PENDING, UNDER_REVIEW, RESOLVED, DISMISSED",
+    ),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role(UserRole.LMO, UserRole.ADMIN)
+    ),
+) -> DiscrepancyReportListResponse:
+    """Retrieve paginated list of citizen discrepancy reports."""
+    items, total = discrepancy_report_repository.list_reports(
+        db, status_filter=status_filter, page=page, page_size=page_size,
+    )
+    return DiscrepancyReportListResponse(
+        items=[_enrich_report(r) for r in items],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.patch(
+    "/discrepancy-reports/{report_id}/action",
+    response_model=DiscrepancyReportDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Take Action on Discrepancy Report (LMO / Admin)",
+)
+def action_discrepancy_report(
+    report_id: int,
+    action: DiscrepancyReportActionRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role(UserRole.LMO, UserRole.ADMIN)
+    ),
+) -> DiscrepancyReportDetailResponse:
+    """LMO / Admin reviews and takes action on a discrepancy report."""
+    report = discrepancy_report_repository.get_by_id(db, report_id)
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Discrepancy report {report_id} not found.",
+        )
+
+    valid_statuses = {"UNDER_REVIEW", "RESOLVED", "DISMISSED"}
+    if action.status not in valid_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Status must be one of: {', '.join(valid_statuses)}",
+        )
+
+    report.status = action.status
+    report.action_remarks = action.action_remarks
+    report.reviewed_by_id = current_user.id
+    report.reviewed_at = datetime.now(timezone.utc)
+    db.flush()
+    db.commit()
+    db.refresh(report)
+
+    return _enrich_report(report)

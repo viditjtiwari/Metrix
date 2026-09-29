@@ -86,3 +86,42 @@ class DiscrepancyReportResponse(BaseModel):
     report_reference_id: str
     status: str = "RECEIVED"
     message: str
+
+
+class DiscrepancyReportDetailResponse(BaseModel):
+    """Full discrepancy report visible to LMO / Admin."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    report_reference_id: str
+    certificate_id: int
+    certificate_number: Optional[str] = None
+    discrepancy_type: str
+    description: str
+    reporter_name: Optional[str] = None
+    reporter_phone: Optional[str] = None
+    evidence_image_url: Optional[str] = None
+    status: str
+    reviewed_by_id: Optional[int] = None
+    reviewed_by_name: Optional[str] = None
+    action_remarks: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class DiscrepancyReportListResponse(BaseModel):
+    """Paginated list of discrepancy reports for LMO / Admin."""
+    items: List[DiscrepancyReportDetailResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class DiscrepancyReportActionRequest(BaseModel):
+    """LMO / Admin action on a discrepancy report."""
+    status: str = Field(
+        ..., description="UNDER_REVIEW, RESOLVED, DISMISSED"
+    )
+    action_remarks: Optional[str] = Field(None, max_length=1000)
+
