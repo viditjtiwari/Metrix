@@ -331,3 +331,83 @@ def test_certificate_rbac_and_isolation(
     # 19b. Other owner cannot download another owner's certificate
     forbidden_dl = client.get(f"/api/v1/certificates/{cert_id}/download", headers=other_owner_headers)
     assert forbidden_dl.status_code == 403
+
+
+def test_public_discrepancy_reporting_and_lmo_management(
+    client: TestClient,
+    owner_headers: dict,
+    lmo_headers: dict,
+    admin_headers: dict,
+    gatc_headers: dict,
+    gatc_user: User,
+) -> None:
+    """Test citizen reporting of certificate discrepancy and LMO/Admin management flow."""
+    app_id = _setup_verified_application(client, owner_headers, lmo_headers, gatc_headers, gatc_user)
+    issue_resp = client.post(f"/api/v1/applications/{app_id}/certificate", headers=lmo_headers)
+    assert issue_resp.status_code == 201
+    cert_data = issue_resp.json()
+    token = cert_data["verification_token"]
+
+    # 1. Public citizen reports discrepancy
+    report_payload = {
+        "discrepancy_type": "TAMPERED_PHYSICAL_SEAL",
+        "description": "The lead seal on the calibration dial is cut and missing.",
+        "reporter_name": "Citizen Rakesh",
+        "reporter_phone": "+91 9876543210",
+        "evidence_image_url": "https://example.com/seal_tampered.jpg",
+    }
+    report_resp = client.post(
+        f"/api/v1/public/certificates/{token}/report-discrepancy",
+        json=report_payload,
+    )
+    assert report_resp.status_code == 201
+    report_data = report_resp.json()
+    assert report_data["status"] == "RECEIVED"
+    ref_id = report_data["report_reference_id"]
+    assert ref_id.startswith("REP-")
+
+    # 2. Non-existent token returns 404
+    bad_resp = client.post(
+        "/api/v1/public/certificates/invalid-token-12345/report-discrepancy",
+        json=report_payload,
+    )
+    assert bad_resp.status_code == 404
+
+    # 3. LMO lists discrepancy reports
+    lmo_list_resp = client.get("/api/v1/discrepancy-reports", headers=lmo_headers)
+    assert lmo_list_resp.status_code == 200
+    reports = lmo_list_resp.json()["items"]
+    assert len(reports) >= 1
+    target_report = next(r for r in reports if r["report_reference_id"] == ref_id)
+    assert target_report["status"] == "PENDING"
+    assert target_report["discrepancy_type"] == "TAMPERED_PHYSICAL_SEAL"
+    report_id = target_report["id"]
+
+    # 4. Admin also has access to list discrepancy reports
+    admin_list_resp = client.get("/api/v1/discrepancy-reports", headers=admin_headers)
+    assert admin_list_resp.status_code == 200
+
+    # 5. Owner is forbidden from listing or managing discrepancy reports (RBAC)
+    owner_list_resp = client.get("/api/v1/discrepancy-reports", headers=owner_headers)
+    assert owner_list_resp.status_code == 403
+
+    # 6. LMO takes action: Marks UNDER_REVIEW
+    action_resp = client.patch(
+        f"/api/v1/discrepancy-reports/{report_id}/action",
+        json={"status": "UNDER_REVIEW", "action_remarks": "Officer dispatched to inspect instrument"},
+        headers=lmo_headers,
+    )
+    assert action_resp.status_code == 200
+    updated_report = action_resp.json()
+    assert updated_report["status"] == "UNDER_REVIEW"
+    assert updated_report["action_remarks"] == "Officer dispatched to inspect instrument"
+    assert updated_report["reviewed_by_name"] is not None
+
+    # 7. Owner cannot take action
+    owner_action_resp = client.patch(
+        f"/api/v1/discrepancy-reports/{report_id}/action",
+        json={"status": "RESOLVED", "action_remarks": "Unauthorized resolve"},
+        headers=owner_headers,
+    )
+    assert owner_action_resp.status_code == 403
+

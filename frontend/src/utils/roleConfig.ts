@@ -70,6 +70,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { label: "Analytics",        href: "/analytics",     icon: "BarChart3",       roles: ["LMO"], group: "tools" },
   { label: "Search",           href: "/search",        icon: "Search",          roles: ["LMO"], group: "tools" },
   { label: "Reports",          href: "/reports",       icon: "Download",        roles: ["LMO"], group: "tools" },
+  { label: "Complaints",       href: "/complaints",    icon: "ShieldAlert",     roles: ["LMO"], group: "operations" },
   { label: "Notices",          href: "/notices",       icon: "Megaphone",       roles: ["LMO"], group: "alerts" },
   { label: "Notifications",    href: "/notifications", icon: "Bell",            roles: ["LMO"], group: "alerts" },
 
@@ -93,6 +94,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { label: "Fee Calculator",   href: "/fees",           icon: "Calculator",      roles: ["ADMIN"], group: "tools" },
   { label: "Analytics",        href: "/analytics",      icon: "BarChart3",       roles: ["ADMIN"], group: "tools" },
   { label: "Reports",          href: "/reports",        icon: "Download",        roles: ["ADMIN"], group: "tools" },
+  { label: "Complaints",       href: "/complaints",     icon: "ShieldAlert",     roles: ["ADMIN"], group: "management" },
   { label: "Notices",          href: "/notices",        icon: "Megaphone",       roles: ["ADMIN"], group: "admin" },
   { label: "System",           href: "/admin/system",   icon: "Server",          roles: ["ADMIN"], group: "admin" },
   { label: "Notifications",    href: "/notifications",  icon: "Bell",            roles: ["ADMIN"], group: "alerts" },

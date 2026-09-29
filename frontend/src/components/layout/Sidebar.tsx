@@ -9,13 +9,13 @@ import { UserRole } from "@/types";
 import {
   LayoutDashboard, Scale, FileText, ClipboardCheck, Award,
   Search, Download, Bell, Users, Server, Megaphone, BarChart3,
-  Calculator, ChevronLeft, ChevronRight, LucideIcon,
+  Calculator, ChevronLeft, ChevronRight, LucideIcon, ShieldAlert,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   LayoutDashboard, Scale, FileText, ClipboardCheck, Award,
   Search, Download, Bell, Users, Server, Megaphone, BarChart3,
-  Calculator,
+  Calculator, ShieldAlert,
 };
 
 /** Accent classes per role for the active link highlight */
